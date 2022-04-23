@@ -158,19 +158,12 @@ class HtmlBuilder {
   }
 }
 
-class HtmlElementBuilder extends HtmlBuilder {
-  constructor( tagName, ...children ) {
+class HtmlSingleElementBuilder extends HtmlBuilder {
+  constructor( tagName ) {
     super();
     this.tagName= tagName;
-    this.children= children;
     this.cssClasses= null;
     this.attributes= null;
-  }
-
-  appendChild( c ) {
-    if( c ) {
-      this.children.push(c);
-    }
   }
 
   addCssClass( name ) {
@@ -189,23 +182,31 @@ class HtmlElementBuilder extends HtmlBuilder {
     this.attributes.set(name, escapeAttr ? escapeHtml(value, true) : value);
   }
 
-  toHtmlString( p ) {
-    let classes= '', attributes= '';
+  _classesToHtmlString() {
+    let classes= '';
     if( this.cssClasses ) {
       classes= ` class="${Array.from(this.cssClasses).join(' ')}"`;
     }
+    return classes;
+  }
+
+  _attributesToHtmlString() {
+    let attributes= '';
     if( this.attributes ) {
       this.attributes.forEach( (attr, key) => {
         attributes+= ` ${key}="${attr}"`;
       });
     }
-
-    p.print(`<${this.tagName}${classes}${attributes}>`).printBlock(() => {
-      this.children.forEach( c => {
-        c.toHtmlString( p );
-      });
-    }).print(`</${this.tagName}>`);
+    return attributes;
   }
+
+  toHtmlString( p ) {
+    const classes= this._classesToHtmlString();
+    const attributes= this._attributesToHtmlString();
+    p.print(`</${this.tagName}${classes}${attributes}>`);
+  }
+
+  _printBlock( p ) {}
 
   print( p ) {
     p.print(`<${this.tagName}>`);
@@ -217,10 +218,37 @@ class HtmlElementBuilder extends HtmlBuilder {
       if( this.attributes ) {
         this.attributes.forEach( (a, k) => p.print(`- attr ${k}:`, a) );
       }
+      this._printBlock( p );
+    });
+  }
+}
+
+class HtmlElementBuilder extends HtmlSingleElementBuilder {
+  constructor( tagName, ...children ) {
+    super( tagName );
+    this.children= children;
+  }
+
+  appendChild( c ) {
+    if( c ) {
+      this.children.push(c);
+    }
+  }
+
+  toHtmlString( p ) {
+    const classes= this._classesToHtmlString();
+    const attributes= this._attributesToHtmlString();
+
+    p.print(`<${this.tagName}${classes}${attributes}>`).printBlock(() => {
       this.children.forEach( c => {
-        console.log( c );
-        c.print( p );
+        c.toHtmlString( p );
       });
+    }).print(`</${this.tagName}>`);
+  }
+
+  _printBlock( p ) {
+    this.children.forEach( c => {
+      c.print( p );
     });
   }
 }
@@ -1284,6 +1312,7 @@ class Kekpiler {
   constructor() {
     this.extensions= [];
     this.extensionMap= new Map();
+    this.customBlocks= new Map();
     this._reset();
   }
 
@@ -1548,6 +1577,7 @@ export {
   Printer,
   IndentPrinter,
   HtmlBuilder,
+  HtmlSingleElementBuilder,
   HtmlElementBuilder,
   HtmlTextBuilder,
   Tokenizer,
