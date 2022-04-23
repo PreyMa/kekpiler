@@ -1542,6 +1542,7 @@ const TokenExports= {
 export {
   assert,
   abstractMethod,
+  escapeHtml,
   Enum,
   ArrayIterator,
   Printer,
