@@ -399,6 +399,7 @@ const TokenType= {
   Code: 0,
   ContainerBox: 0,
   CustomBlock: 0,
+  DivisionToken: 0,
   Document: 0,
   EnumerationItem: 0,
   EscapedText: 0,
@@ -415,14 +416,13 @@ const TokenType= {
   SoftDivision: 0,
   StyledText: 0,
   Table: 0,
-  Text: 0,
-  DivisionToken: 0,
-  TableRowDivision: 0,
   TableCell: 0,
+  TableHeaderCell: 0,
   TableHeaderDivision: 0,
-  TableRow: 0,
   TableHeaderRow: 0,
-  TableHeaderCell: 0
+  TableRow: 0,
+  TableRowDivision: 0,
+  Text: 0,
 };
 Enum.initPlainObject( TokenType );
 
