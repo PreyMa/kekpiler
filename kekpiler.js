@@ -22,6 +22,18 @@ function charIsWhitespace( c ) {
   return ' \t\n\r\v'.indexOf(c) !== -1;
 }
 
+// Based on https://stackoverflow.com/a/6234804
+function escapeHtml( str, removeNL= false ) {
+  str= str.replaceAll('&', '&amp;')
+          .replaceAll("'", '&#039;')
+          .replaceAll('"', '&quot;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('\r', '');
+
+  return removeNL ? str.replaceAll('\n', ' ') : str;
+}
+
 class Enum {
   constructor( obj ) {
     this.__construct( obj );
@@ -169,13 +181,12 @@ class HtmlElementBuilder extends HtmlBuilder {
     this.cssClasses.add( name );
   }
 
-  setAttribute( name, value ) {
-    // Todo: Attribute escaping!
+  setAttribute( name, value, escapeAttr= true  ) {
     if( !this.attributes ) {
       this.attributes= new Map();
     }
 
-    this.attributes.set(name, value);
+    this.attributes.set(name, escapeAttr ? escapeHtml(value, true) : value);
   }
 
   toHtmlString( p ) {
@@ -218,8 +229,7 @@ class HtmlTextBuilder extends HtmlBuilder {
   constructor( text, escapeText= true ) {
     super();
 
-    // Todo: Text escaping
-    this.text= text;
+    this.text= escapeText ? escapeHtml(text) : text;
   }
 
   toHtmlString( p ) {
