@@ -1,3 +1,4 @@
+import {abstractMethod} from '../kekpiler.js';
 
 export function FragmentToken( klass ) {
   return class FragmentToken extends klass {
