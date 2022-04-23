@@ -1,9 +1,15 @@
 import * as Kek from './kekpiler.js';
+import {HeaderSluggerExtension} from './extensions/headerSlugger.js';
 
-async function compileMarkdown( mdText ) {
+function getCompiler() {
   const k= new Kek.Kekpiler();
+  k.use( new HeaderSluggerExtension() );
 
-  return await k.compile( markdown, true );
+  return k;
+}
+
+async function compileMarkdown( markdownText ) {
+  return await getCompiler().compile( markdownText, true );
 }
 
 export * from './kekpiler.js';
