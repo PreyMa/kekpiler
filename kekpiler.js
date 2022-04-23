@@ -18,6 +18,23 @@ function abstractMethod() {
   throw Error('Abstract method');
 }
 
+function inheritsFrom(baseClass, childClass) {
+  if( typeof baseClass !== 'function' || typeof childClass !== 'function' ) {
+    throw new Error('Cannot check inheritance relation of non-function objects');
+  }
+
+  let k= childClass;
+  while( k ) {
+    if( k === baseClass ) {
+      return true;
+    }
+
+    k= Object.getPrototypeOf( k );
+  }
+
+  return false;
+}
+
 function charIsWhitespace( c ) {
   return ' \t\n\r\v'.indexOf(c) !== -1;
 }
@@ -491,17 +508,11 @@ class Token {
   }
 
   static injectClass( baseClass, newClass ) {
-    let k= newClass;
-    while( k ) {
-      if( k === baseClass ) {
-        baseClass._injectedClass= newClass;
-        return;
-      }
-
-      k= Object.getPrototypeOf( k );
+    if( !inheritsFrom(baseClass, newClass) ) {
+      throw new Error(`Injected class has to inherit from the overriden base class. '${newClass.name}' does not inherit from '${baseClass.name}'`);
     }
 
-    throw new Error(`Injected class has to inherit from the overriden base class. '${newClass.name}' does not inherit from '${baseClass.name}'`);
+    baseClass._injectedClass= newClass;
   }
 
   static create(...args) {
@@ -1330,6 +1341,27 @@ class Kekpiler {
 
   injectTokenClass(baseClass, newClass) {
     Token.injectClass(baseClass, newClass);
+  }
+
+  registerCustomBlockToken(name, klass) {
+    if( !inheritsFrom(CustomBlock, klass) ) {
+      throw new Error(`The class provided for custom block '${name}' has to inherit from the 'CustomBlock' class.`);
+    }
+
+    if( this.customBlocks.has(name) ) {
+      throw new Error(`A custom block named '${name}' already exists`);
+    }
+
+    this.customBlocks.set(name, klass);
+  }
+
+  createCustomBlockToken( name, ...args ) {
+    const klass= this.customBlocks.get(name);
+    if( !klass ) {
+      return null;
+    }
+
+    return klass.create(...args);
   }
 
   _reset() {
