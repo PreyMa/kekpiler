@@ -1,0 +1,17 @@
+{
+  "name": "kekpiler",
+  "version": "1.0.0",
+  "description": "A simple barebones markdown compiler using regular expressions",
+  "main": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "node test"
+  },
+  "keywords": [
+    "markdown",
+    "JS",
+    "kek"
+  ],
+  "author": "PreyMa",
+  "license": "MIT"
+}
