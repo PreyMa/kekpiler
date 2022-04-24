@@ -389,22 +389,54 @@ function ResourceToken( klass ) {
     constructor( text, offset, ...args ) {
       super(...args);
 
+      this.text= null;
+      this.resource= null;
+      this.reference= null;
+      this.resourceUrl= null;
+
+      if( text instanceof RessourceToken ) {
+        return this._copyConstruct( text );
+      }
+
+      this._constructFromText( text, offset );
+    }
+
+    _copyConstruct( other ) {
+      // Copy whole state
+      this.text= other.text;
+      this.resource= other.resource;
+      this.reference= other.reference;
+      this.resourceUrl= other.resourceUrl;
+
+      this._setupRequestCallback();
+    }
+
+    _constructFromText( text, offset ) {
       const splitIdx= text.indexOf(']');
       assert( text[offset] === '[' );
       assert( splitIdx > 0 );
 
       this.text= text.substring(offset+1, splitIdx);
-      this.resource= null;
-      this.reference= null;
-      this.resourceUrl= null;
 
       // Either make a request or a reference request to the compiler
       const refOrResName= text.substring(splitIdx+2, text.length-1).trim();
       if( text[splitIdx+1] === '(' ) {
         this.resource= refOrResName;
-        Kekpiler.the().requestResource( this );
       } else {
         this.reference= refOrResName;
+      }
+
+      this._setupRequestCallback();
+    }
+
+    _setupRequestCallback() {
+      if( this.resourceUrl ) {
+        return;
+      }
+
+      if( this.resource ) {
+        Kekpiler.the().requestResource( this );
+      } else {
         Kekpiler.the().requestReference( this );
       }
     }
@@ -989,8 +1021,6 @@ class Table extends ParentToken {
     super();
     this.fallBackText= text;
 
-    console.log('Table:', text );
-
     const tokens= Tokenizer.tokenizeTable( text );
     const it= new ArrayIterator( tokens );
 
@@ -1232,10 +1262,36 @@ class CustomBlock extends ResourceToken(Token) {
 
     // Rename the inner text to better reflect its purpose
     this.blockType= this.text;
-    this.text= undefined;
+
+    // Do not remove the text property, because it is needed for copy construction
+    // when creating a specialzed block token
+    if( this._isSpecialized() ) {
+      this.text= undefined;
+    }
   }
 
-  render() { /*todo*/ }
+  _isSpecialized() {
+    return this.constructor !== CustomBlock;
+  }
+
+  _setupRequestCallback() {
+    // Do not setup a callback for a plain custom block
+    // A specialized custom block sets up its own callback
+    if( this._isSpecialized() ) {
+      super._setupRequestCallback();
+    }
+  }
+
+  consumeTokens( it ) {
+    // Create a specialized custom block via copy construction.
+    // Resource request callbacks will now be setup
+    const token= Kekpiler.the().createCustomBlockToken(this.blockType, this);
+    return token ? token : this;
+  }
+
+  render() {
+    return new HtmlTextBuilder(`[${this.blockType}]`);
+  }
 }
 CustomBlock._tokenType= TokenType.CustomBlock;
 
