@@ -304,7 +304,7 @@ class HtmlSingleElementBuilder extends HtmlBuilder {
   toHtmlString( p ) {
     const classes= this._classesToHtmlString();
     const attributes= this._attributesToHtmlString();
-    p.print(`</${this.tagName}${classes}${attributes}>`);
+    p.print(`<${this.tagName}${classes}${attributes} />`);
   }
 
   _printBlock( p ) {}
