@@ -1,11 +1,71 @@
 
+class CompoundRegularExpression {
+  constructor(...parts) {
+    this.flags= '';
+    this.regex= null;
 
-const sectionRegex= /(?<comm><!--[\s\S]*?-->)|(?<head>[^\S\r\n]*#+.+)|(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|(?<box>:::(.+\r?\n)?([\s\S](?!:::))*[\s\S](:::)?)|(?<img>!\[.*\]((\(.*\))|(\[.*\])))|(?<block>@\[.+\]((\(.*\))|(\[.*\])))|(?<ref>[^\S\r\n]*\[.+\]\:.+)|(?<item>[^\S\r\n]*[\*\+-][^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|(?<enum>[^\S\r\n]*\d+\.[^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|(?<table>(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n[^\S\r\n]*(\|[^\S\r\n]*[:-]-+[:-][^\S\r\n]*)+\|?[^\S\r\n]*\r?\n([^\S\r\n]*(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n)*)|(?<quote>[^\S\r\n]*>([\s\S](?!(\r?\n([^\S\r\n]*>[^\S\r\n]*)?\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))))*[\S\s](\r?\n[^\S\r\n]*>[^\S\r\n]*$)*)|(?<par>(?=\S)([\s\S](?!(\r?\n\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n[^\S\r\n]*([\*\+-]|(\d+\.))[^\S\r\n])))*[\S\s])|(?<hdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*\r?\n\s*)|(?<sdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*)/gm;
+    if( parts.length && parts[0] ) {
+      this.flags= parts[0].flags;
+
+      const srcString= parts.reduce((src, reg) => src+ reg.source, '');
+      this.regex= new RegExp(srcString, this.flags);
+    }
+  }
+
+  copy() {
+    return new CompoundRegularExpression( this.regex );
+  }
+
+  exec( text ) {
+    return this.regex.exec( text );
+  }
+
+  append( regex ) {
+
+  }
+}
 
 const itemPrefixRegex= /[^\S\r\n]*([\*\+-]|(\d+\.))/gm;
-const containerBoxRegex= /(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|(?<item>[^\S\r\n]*[\*\+-][^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|(?<enum>[^\S\r\n]*\d+\.[^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|(?<par>(?=\S)([\s\S](?!(\r?\n\r?\n)|([^\S\r\n]*```)|(\r?\n[^\S\r\n]*([\*\+-]|(\d+\.))[^\S\r\n])))*[\S\s])|(?<sdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*)/gm;
-const paragraphRegex= /(?<esc>\\[`_~*\\\[])|(?<icode2>``([\S\s](?!``))*.``)|(?<icode>`(?!`)([\S\s](?!`))*.`)|(?<link>\[.*\]((\(.*\))|(\[.*\])))|(?<style>(?<s1>___|\*\*\*|__|\*\*|[_~\*])([\S\s](?!\k<s1>))*.\k<s1>)|(?<text>([\s\S](?![`_~*\\\[]))*.)/gm;
-const tableRegex= /(?<thead>\|([^\S\r\n]*[:-]-+[:-][^\S\r\n]*\|)+[^\S\r\n]*\r?\n)|(?<tdiv>\|?[^\S\r\n]*\r?\n)|(?<tcell>\|((\\\|)|[^\|\r\n])+)/gm;
+
+const sectionRegex= new CompoundRegularExpression(
+  /(?<comm><!--[\s\S]*?-->)|/gm,
+  /(?<head>[^\S\r\n]*#+.+)|/,
+  /(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|/,
+  /(?<box>:::(.+\r?\n)?([\s\S](?!:::))*[\s\S](:::)?)|/,
+  /(?<img>!\[.*\]((\(.*\))|(\[.*\])))|/,
+  /(?<block>@\[.+\]((\(.*\))|(\[.*\])))|/,
+  /(?<ref>[^\S\r\n]*\[.+\]\:.+)|/,
+  /(?<item>[^\S\r\n]*[\*\+-][^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
+  /(?<enum>[^\S\r\n]*\d+\.[^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
+  /(?<table>(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n[^\S\r\n]*(\|[^\S\r\n]*[:-]-+[:-][^\S\r\n]*)+\|?[^\S\r\n]*\r?\n([^\S\r\n]*(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n)*)|/,
+  /(?<quote>[^\S\r\n]*>([\s\S](?!(\r?\n([^\S\r\n]*>[^\S\r\n]*)?\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))))*[\S\s](\r?\n[^\S\r\n]*>[^\S\r\n]*$)*)|/,
+  /(?<par>(?=\S)([\s\S](?!(\r?\n\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n[^\S\r\n]*([\*\+-]|(\d+\.))[^\S\r\n])))*[\S\s])|/,
+  /(?<hdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*\r?\n\s*)|/,
+  /(?<sdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*)/
+);
+
+const containerBoxRegex= new CompoundRegularExpression(
+  /(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|/gm,
+  /(?<item>[^\S\r\n]*[\*\+-][^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
+  /(?<enum>[^\S\r\n]*\d+\.[^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
+  /(?<par>(?=\S)([\s\S](?!(\r?\n\r?\n)|([^\S\r\n]*```)|(\r?\n[^\S\r\n]*([\*\+-]|(\d+\.))[^\S\r\n])))*[\S\s])|/,
+  /(?<sdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*)/
+);
+
+const paragraphRegex= new CompoundRegularExpression(
+  /(?<esc>\\[`_~*\\\[])|/gm,
+  /(?<icode2>``([\S\s](?!``))*.``)|/,
+  /(?<icode>`(?!`)([\S\s](?!`))*.`)|/,
+  /(?<link>\[.*\]((\(.*\))|(\[.*\])))|/,
+  /(?<style>(?<s1>___|\*\*\*|__|\*\*|[_~\*])([\S\s](?!\k<s1>))*.\k<s1>)|/,
+  /(?<text>([\s\S](?![`_~*\\\[]))*.)/
+);
+
+const tableRegex= new CompoundRegularExpression(
+  /(?<thead>\|([^\S\r\n]*[:-]-+[:-][^\S\r\n]*\|)+[^\S\r\n]*\r?\n)|/gm,
+  /(?<tdiv>\|?[^\S\r\n]*\r?\n)|/,
+  /(?<tcell>\|((\\\|)|[^\|\r\n])+)/
+);
 
 function assert( cond, msg= 'Assertion failed' ) {
   if( !cond ) {
@@ -291,7 +351,7 @@ class Tokenizer {
     const tokens= [];
 
     // Create new state
-    regex= new RegExp( regex );
+    regex= regex.copy();
 
     let match;
     while((match= regex.exec(text)) !== null) {
