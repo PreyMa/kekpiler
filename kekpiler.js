@@ -773,7 +773,7 @@ class ContainerBox extends ParentToken {
   render() {
     const elem= super.render();
     if( this.containerType ) {
-      elem.addCssClass( this.containerType );
+      elem.addCssClass( Kekpiler.the().userContentPrefix()+ this.containerType );
     }
 
     return elem;
@@ -1436,10 +1436,16 @@ class Extension {
 
 class Kekpiler {
 
-  constructor() {
+  constructor( userConfig ) {
+    const config= {
+      userContentPrefix: 'md_'
+    };
+    Object.assign(config, userConfig);
+
     this.extensions= [];
     this.extensionMap= new Map();
     this.customBlocks= new Map();
+    this.userContentPrefixText= config.userContentPrefix;
     this._reset();
   }
 
@@ -1523,6 +1529,10 @@ class Kekpiler {
   static the() {
     assert(Kekpiler._instance, 'Call to compiler instance in invalid state');
     return Kekpiler._instance;
+  }
+
+  userContentPrefix() {
+    return this.userContentPrefixText;
   }
 
   requestResource( r ) {
