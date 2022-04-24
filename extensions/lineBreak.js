@@ -5,6 +5,10 @@ class LineBreakToken extends Kek.Token.CustomBlock {
     return new Kek.HtmlSingleElementBuilder('br');
   }
 
+  isInlineToken() {
+    return true;
+  }
+
   resourceType() {
     return 'none';
   }
