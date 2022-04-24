@@ -1044,6 +1044,10 @@ class Header extends TextToken {
     this.text= text.substring(cnt+ 1);
   }
 
+  headerLevel() {
+    return this.level;
+  }
+
   print( p ) {
     p.print('#'.repeat(this.level), this.text);
   }
