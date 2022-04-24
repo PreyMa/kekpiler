@@ -637,11 +637,19 @@ class Token {
     return this.type() === t;
   }
 
+  isInlineToken() {
+    abstractMethod();
+  }
+
   print( p ) {
     p.print( this.name() );
   }
 
   consumeTokens( it ) {
+    return this;
+  }
+
+  consumeNeighbours( it ) {
     return this;
   }
 
@@ -652,6 +660,9 @@ class Token {
 
 class DivisionToken extends Token {
   render() {}
+  isInlineToken() {
+    return false;
+  }
 }
 DivisionToken._tokenType= TokenType.DivisionToken;
 
@@ -661,13 +672,17 @@ class ParentToken extends Token {
     this.children= [];
   }
 
-  appendChild( c ) {
-    this.children.push( c );
-    return c;
+  appendChild( ...c ) {
+    this.children.push( ...c );
+    return c[0];
   }
 
   hasChildren() {
     return !!this.children.length;
+  }
+
+  isInlineToken() {
+    return false;
   }
 
   _printSelf( p ) {
@@ -700,15 +715,24 @@ class ParentToken extends Token {
   }
 
   _createChildrenFromTokenList( tokens ) {
-    const it= new ArrayIterator( tokens );
+    const tokenIt= new ArrayIterator( tokens );
 
-    while( it.hasNext() ) {
-      let child= it.next();
-      child= child.consumeTokens( it );
+    const nodes= [];
+    while( tokenIt.hasNext() ) {
+      let node= tokenIt.next();
+      node= node.consumeTokens( tokenIt );
 
-      if( child ) {
-        this.children.push( child );
+      if( node ) {
+        nodes.push( node );
       }
+    }
+
+    const nodeIt= new ArrayIterator( nodes );
+    while( nodeIt.hasNext() ) {
+      let node= nodeIt.next();
+      node= node.consumeNeighbours( nodeIt );
+
+      this.children.push( node );
     }
   }
 
@@ -753,6 +777,26 @@ class Paragraph extends ParentToken {
 
     const tokens= Kekpiler.the().tokenizer().tokenizeParagraph( text );
     this._createChildrenFromTokenList( tokens );
+  }
+
+  consumeNeighbours( it ) {
+    while( it.hasNext() ) {
+      const token= it.peek();
+      // Consume inline tokens
+      if( token.isInlineToken() ) {
+        this.appendChild( it.next() );
+
+      // Consume all children of a following paragraph which is not seperated
+      // by a division
+      } else if( token.is(TokenType.Paragraph) ) {
+        this.appendChild( ...it.next().children );
+
+      } else {
+        break;
+      }
+    }
+
+    return this;
   }
 
   _htmlElementTag() {
@@ -942,6 +986,10 @@ class TextToken extends Token {
   constructor( text= null ) {
     super();
     this.text= text;
+  }
+
+  isInlineToken() {
+    return true;
   }
 
   print( p ) {
@@ -1318,6 +1366,10 @@ class Image extends ResourceToken( Token ) {
     return 'image';
   }
 
+  isInlineToken() {
+    return false;
+  }
+
   render() {
     const elem= new HtmlElementBuilder('img');
     elem.setAttribute('src', this.resourceUrl);
@@ -1362,6 +1414,10 @@ class CustomBlock extends ResourceToken(Token) {
     return token ? token : this;
   }
 
+  isInlineToken() {
+    return false;
+  }
+
   render() {
     return new HtmlTextBuilder(`[${this.blockType}]`);
   }
@@ -1380,6 +1436,10 @@ class Reference extends Token {
     this.resource= text.substring(splitIdx+2).trim();
 
     Kekpiler.the().addReference( this );
+  }
+
+  isInlineToken() {
+    return false;
   }
 
   render() {}
