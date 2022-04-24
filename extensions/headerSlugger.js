@@ -38,6 +38,10 @@ class SluggedHeader extends FragmentToken(Kek.Token.Header) {
   fragmentId() {
     return this.slug;
   }
+
+  title() {
+    return this.text;
+  }
 }
 
 export class HeaderSluggerExtension extends Kek.Extension {
@@ -48,7 +52,7 @@ export class HeaderSluggerExtension extends Kek.Extension {
 
   init( kek ) {
     this.slugger= new SimpleSlugger( kek.userContentPrefix() );
-    
+
     kek.injectTokenClass( Kek.Token.Header, SluggedHeader );
     return 'HeaderSlugger';
   }
