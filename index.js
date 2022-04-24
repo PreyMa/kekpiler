@@ -1,9 +1,11 @@
 import * as Kek from './kekpiler.js';
 import {HeaderSluggerExtension} from './extensions/headerSlugger.js';
+import {LineBreakExtension} from './extensions/lineBreak.js';
 
 function getCompiler() {
   const k= new Kek.Kekpiler();
   k.use( new HeaderSluggerExtension() );
+  k.use( new LineBreakExtension() );
 
   return k;
 }
