@@ -1012,14 +1012,14 @@ class Table extends ParentToken {
         break;
 
       } else {
-        console.log('UNEXPECTED HEADER CHILD', tk);
+        // console.log('UNEXPECTED HEADER CHILD', tk);
         this.children= [];
         return;
       }
     }
 
     if( !it.hasNext() || !it.next().is(TokenType.TableHeaderDivision) ) {
-      console.log('EXPECTED LAYOUT', it.get());
+      // console.log('EXPECTED LAYOUT', it.get());
       this.children= [];
       return;
     }
@@ -1029,7 +1029,7 @@ class Table extends ParentToken {
     // Layout and header row need to have the same number of columns
     const columnCount= tableLayout.columnCount();
     if( columnCount !== header.children.length ) {
-      console.log('LAYOUT COLS DON\'T MATCH', columnCount, header.children.length);
+      // console.log('LAYOUT COLS DON\'T MATCH', columnCount, header.children.length);
       this.children= [];
       return;
     }
@@ -1058,7 +1058,7 @@ class Table extends ParentToken {
           break;
 
         default:
-          console.log('UNEXPECTED CELL CHILD', tk);
+          // console.log('UNEXPECTED CELL CHILD', tk);
           this.children= [];
           return;
       }
