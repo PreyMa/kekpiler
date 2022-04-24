@@ -27,7 +27,7 @@ class CompoundRegularExpression {
 
 const itemPrefixRegex= /[^\S\r\n]*([\*\+-]|(\d+\.))/gm;
 
-const sectionRegex= new CompoundRegularExpression(
+const documentRegex= new CompoundRegularExpression(
   /(?<comm><!--[\s\S]*?-->)|/gm,
   /(?<head>[^\S\r\n]*#+.+)|/,
   /(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|/,
@@ -347,7 +347,14 @@ class HtmlTextBuilder extends HtmlBuilder {
 }
 
 class Tokenizer {
-  static _tokenize( text, regex) {
+  constructor() {
+    this.documentRegex= documentRegex;
+    this.containerBoxRegex= containerBoxRegex;
+    this.paragraphRegex= paragraphRegex;
+    this.tableRegex= tableRegex;
+  }
+
+  static _tokenize( text, regex ) {
     const tokens= [];
 
     // Create new state
@@ -366,20 +373,20 @@ class Tokenizer {
     return tokens;
   }
 
-  static tokenizeDocument( text ) {
-    return Tokenizer._tokenize( text, sectionRegex );
+  tokenizeDocument( text ) {
+    return Tokenizer._tokenize( text, this.documentRegex );
   }
 
-  static tokenizeContainerBox( text ) {
-    return Tokenizer._tokenize( text, containerBoxRegex );
+  tokenizeContainerBox( text ) {
+    return Tokenizer._tokenize( text, this.containerBoxRegex );
   }
 
-  static tokenizeParagraph( text ) {
-    return Tokenizer._tokenize( text, paragraphRegex );
+  tokenizeParagraph( text ) {
+    return Tokenizer._tokenize( text, this.paragraphRegex );
   }
 
-  static tokenizeTable( text ) {
-    return Tokenizer._tokenize( text, tableRegex );
+  tokenizeTable( text ) {
+    return Tokenizer._tokenize( text, this.tableRegex );
   }
 }
 
@@ -738,7 +745,7 @@ class Paragraph extends ParentToken {
       return;
     }
 
-    const tokens= Tokenizer.tokenizeParagraph( text );
+    const tokens= Kekpiler.the().tokenizer().tokenizeParagraph( text );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -762,7 +769,7 @@ class ContainerBox extends ParentToken {
     this.containerType= text.substring(3, endOfLine).trim();
 
     const content= text.substring(endOfLine, text.length- 3)
-    const tokens= Tokenizer.tokenizeContainerBox( content );
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -786,7 +793,7 @@ class Document extends ParentToken {
   constructor( text ) {
     super();
 
-    const tokens= Tokenizer.tokenizeDocument( text );
+    const tokens= Kekpiler.the().tokenizer().tokenizeDocument( text );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -836,7 +843,7 @@ class ListItemToken extends ParentToken {
     // Tokenize
     const prefixLength= (new RegExp(itemPrefixRegex)).exec( text )[0].length;
     const content= text.substring( prefixLength ).replace( wsRegex, '\n' );
-    const tokens= Tokenizer.tokenizeContainerBox( content );
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -1081,7 +1088,7 @@ class Table extends ParentToken {
     super();
     this.fallBackText= text;
 
-    const tokens= Tokenizer.tokenizeTable( text );
+    const tokens= Kekpiler.the().tokenizer().tokenizeTable( text );
     const it= new ArrayIterator( tokens );
 
     if( !it.hasNext() ) {
@@ -1445,6 +1452,7 @@ class Kekpiler {
     this.extensions= [];
     this.extensionMap= new Map();
     this.customBlocks= new Map();
+    this.tokenizerInstance= new Tokenizer();
     this.userContentPrefixText= config.userContentPrefix;
     this._reset();
   }
@@ -1533,6 +1541,10 @@ class Kekpiler {
 
   userContentPrefix() {
     return this.userContentPrefixText;
+  }
+
+  tokenizer() {
+    return this.tokenizerInstance;
   }
 
   requestResource( r ) {
