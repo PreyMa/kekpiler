@@ -101,6 +101,24 @@ function inheritsFrom(baseClass, childClass) {
   return false;
 }
 
+function Mixin( klassFactory ) {
+	const protoKey= Symbol('mixinKey');
+
+	function wrapper( superKlass ) {
+    const mixKlass= klassFactory( superKlass );
+    mixKlass.prototype[protoKey]= wrapper;
+    return mixKlass;
+  }
+
+  Object.defineProperty(wrapper, Symbol.hasInstance, {
+    value: function( obj ) {
+      return obj[protoKey] === wrapper;
+    }
+  });
+
+  return wrapper;
+}
+
 function charIsWhitespace( c ) {
   return ' \t\n\r\v'.indexOf(c) !== -1;
 }
@@ -457,7 +475,7 @@ class CodeStyle extends TextStyle {
 * This mixin parses resource blocks like images, links, custom blocks and makes the
 * appropriate requests to the compiler
 */
-function ResourceToken( klass ) {
+const ResourceToken= Mixin( klass => {
   return class RessourceToken extends klass {
     constructor( text, offset, ...args ) {
       super(...args);
@@ -540,7 +558,7 @@ function ResourceToken( klass ) {
       abstractMethod();
     }
   };
-}
+});
 
 const TableColumnAlignment= {
   Center: 0,
@@ -1840,6 +1858,7 @@ export {
   assert,
   abstractMethod,
   escapeHtml,
+  Mixin,
   Enum,
   ArrayIterator,
   Printer,
