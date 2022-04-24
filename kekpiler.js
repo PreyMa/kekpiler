@@ -1677,6 +1677,7 @@ class Kekpiler {
     });
   }
 }
+/** @type {Kekpiler} **/
 Kekpiler._instance= null;
 
 class KekpilerProxy {
