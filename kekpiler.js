@@ -7,6 +7,12 @@ class CompoundRegularExpression {
     if( parts.length && parts[0] ) {
       this.flags= parts[0].flags;
 
+      // Copy constructor fast path
+      if( parts.length === 1 ) {
+        this.regex= new RegExp( parts[0] );
+        return;
+      }
+
       const srcString= parts.reduce((src, reg) => src+ reg.source, '');
       this.regex= new RegExp(srcString, this.flags);
     }
@@ -21,7 +27,7 @@ class CompoundRegularExpression {
   }
 
   append( regex ) {
-
+    // todo
   }
 }
 
