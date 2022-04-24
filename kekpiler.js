@@ -1501,7 +1501,14 @@ class Kekpiler {
     return obj;
   }
 
-  _updateReferenceRequest( req, obj ) {
+  /**
+  * Convert a reference request to a resource request based on the resolved
+  * reference request data
+  * @param req {ResourceToken} Request to upgrade
+  * @param obj The resolved reference request data
+  **/
+  _upgradeReferenceRequest( req, obj ) {
+    // Set the resource name stored in th reference and make a resource request
     req.setResourceName( obj.reference.resourceName() );
     this.requestResource( req );
   }
@@ -1511,20 +1518,21 @@ class Kekpiler {
     const obj= this._ensureReferenceRequestObj( name );
 
     obj.requests.push( r );
-    if( !obj.reference ) {
-      return;
-    }
 
-    this._updateReferenceRequest( r, obj );
+    // Upgrade to resource request if a reference token has been found
+    if( obj.reference ) {
+      this._upgradeReferenceRequest( r, obj );
+    }
   }
 
   addReference( r ) {
     const name= r.referenceName();
     const obj= this._ensureReferenceRequestObj( name );
 
+    // Upgrade all pending reference requests
     obj.reference= r;
     obj.requests.forEach( req => {
-      this._updateReferenceRequest( req, obj );
+      this._upgradeReferenceRequest( req, obj );
     });
   }
 
@@ -1547,6 +1555,7 @@ class Kekpiler {
     });
 
     if( this.referenceRequests ) {
+      // All reference request that were never upraded to be resource requests
       this.referenceRequests.forEach( obj => {
         obj.requests.forEach( req => {
           req.trySetResourceUrl( req.referenceName() );
