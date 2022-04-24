@@ -1389,7 +1389,7 @@ class Image extends ResourceToken( Token ) {
   }
 
   render() {
-    const elem= new HtmlElementBuilder('img');
+    const elem= new HtmlSingleElementBuilder('img');
     elem.setAttribute('src', this.resourceUrl);
     elem.setAttribute('alt', this.text);
 
