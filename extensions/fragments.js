@@ -1,8 +1,12 @@
-import {abstractMethod} from '../kekpiler.js';
+import {abstractMethod, Mixin} from '../kekpiler.js';
 
-export function FragmentToken( klass ) {
+export const FragmentToken= Mixin( klass => {
   return class FragmentToken extends klass {
     fragmentId() {
+      abstractMethod();
+    }
+
+    title() {
       abstractMethod();
     }
 
@@ -17,4 +21,4 @@ export function FragmentToken( klass ) {
       return elem;
     }
   }
-}
+});
