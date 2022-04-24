@@ -1619,6 +1619,28 @@ class Kekpiler {
 }
 Kekpiler._instance= null;
 
+class KekpilerProxy {
+  constructor(...args) {
+    this.kekpiler= new Kekpiler(...args);
+  }
+
+  use(...args) {
+    return this.kekpiler.use(...args);
+  }
+
+  injectTokenClass(...args) {
+    return this.kekpiler.injectTokenClass(...args);
+  }
+
+  registerCustomBlockToken(...args) {
+    return this.kekpiler.registerCustomBlockToken(...args);
+  }
+
+  compile(...args) {
+    return this.kekpiler.compile(...args);
+  }
+}
+
 const StyleExports= {
   TextStyle,
   NoneStyle,
@@ -1681,7 +1703,8 @@ export {
   IterationDecisionType,
   IterationDecision,
   Extension,
-  Kekpiler,
+  Kekpiler as KekpilerImpl,
+  KekpilerProxy as Kekpiler,
   StyleExports as Style,
   TokenExports as Token
 };
