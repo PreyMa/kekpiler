@@ -60,8 +60,8 @@ const containerBoxRegex= new CompoundRegularExpression(
 
 const paragraphRegex= new CompoundRegularExpression(
   /(?<esc>\\[`_~*\\\[])|/gm,
-  /(?<icode2>``([\S\s](?!``))*.``)|/,
-  /(?<icode>`(?!`)([\S\s](?!`))*.`)|/,
+  /(?<icode2>``(([\s\S]```+)|[\S\s](?!``))*.``)|/,
+  /(?<icode>`(?!`)(([\s\S]``+)|[\s\S](?!`))*.`)|/,
   /(?<link>\[.*\]((\(.*\))|(\[.*\])))|/,
   /(?<style>(?<s1>___|\*\*\*|__|\*\*|[_~\*])([\S\s](?!\k<s1>))*.\k<s1>)|/,
   /(?<text>([\s\S](?![`_~*\\\[]))*.)/
@@ -1134,7 +1134,7 @@ StyledText._tokenType= TokenType.StyledText;
 class InlineCode extends TextToken {
   constructor( text ) {
     const off= ( text[1] === '`' && text[text.length-2] === '`') ? 2 : 1;
-    super( text.substring( off, text.length- off) );
+    super( text.substring( off, text.length- off).trim() );
   }
 
   render() {
