@@ -1523,10 +1523,10 @@ const DefaultStyle= {
 
 class Extension {
   init() {}
-  async preTokenize() {}
-  async locateResources() {}
-  async preRender() {}
-  async preStringify() {}
+  async preTokenize( comp, markdown ) {}
+  async locateResources( comp ) {}
+  async preRender( comp ) {}
+  async preStringify( comp ) {}
 }
 
 class Kekpiler {
@@ -1734,10 +1734,15 @@ class Kekpiler {
     }
   }
 
-  async _preTokenizeCalls() {
+  async _preTokenizeCalls( markdown ) {
     for( const ex of this.extensions ) {
-      await ex.preTokenize( this );
+      const res= await ex.preTokenize( this, markdown );
+      if( typeof res === 'string' ) {
+        markdown= res;
+      }
     }
+
+    return markdown;
   }
 
   async _preRenderCalls() {
@@ -1757,7 +1762,7 @@ class Kekpiler {
       this._reset();
     });
 
-    await this._preTokenizeCalls();
+    markdown= await this._preTokenizeCalls( markdown );
 
     this._setInstance(() => {
       this._buildTree( markdown );
