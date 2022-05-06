@@ -859,7 +859,7 @@ class ContainerBox extends ParentToken {
   render() {
     const elem= super.render();
     if( this.containerType ) {
-      elem.addCssClass( Kekpiler.the().userContentPrefix()+ this.containerType );
+      elem.addCssClass( Kekpiler.the().config().userContentPrefix+ this.containerType );
     }
 
     return elem;
@@ -1543,16 +1543,14 @@ class Extension {
 class Kekpiler {
 
   constructor( userConfig ) {
-    const config= {
+    this.userConfig= Object.assign({
       userContentPrefix: 'md_'
-    };
-    Object.assign(config, userConfig);
+    }, userConfig);
 
     this.extensions= [];
     this.extensionMap= new Map();
     this.customBlocks= new Map();
     this.tokenizerInstance= new Tokenizer();
-    this.userContentPrefixText= config.userContentPrefix;
     this._reset();
   }
 
@@ -1638,8 +1636,8 @@ class Kekpiler {
     return Kekpiler._instance;
   }
 
-  userContentPrefix() {
-    return this.userContentPrefixText;
+  config() {
+    return this.userConfig;
   }
 
   tokenizer() {

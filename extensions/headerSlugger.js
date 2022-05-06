@@ -51,7 +51,7 @@ export class HeaderSluggerExtension extends Kek.Extension {
   }
 
   init( kek ) {
-    this.slugger= new SimpleSlugger( kek.userContentPrefix() );
+    this.slugger= new SimpleSlugger( kek.config().userContentPrefix );
 
     kek.injectTokenClass( Kek.Token.Header, SluggedHeader );
     return 'HeaderSlugger';
