@@ -379,7 +379,7 @@ class Tokenizer {
     this.tableRegex= tableRegex;
   }
 
-  static _tokenize( text, regex ) {
+  static _tokenize( text, regex, indexOffset ) {
     const tokens= [];
 
     // Create new state
@@ -387,7 +387,7 @@ class Tokenizer {
 
     let match;
     while((match= regex.exec(text)) !== null) {
-      const token= Token.createFromMatch( match );
+      const token= Token.createFromMatch( match, indexOffset );
       if( !token ) {
         continue;
       }
@@ -398,20 +398,20 @@ class Tokenizer {
     return tokens;
   }
 
-  tokenizeDocument( text ) {
-    return Tokenizer._tokenize( text, this.documentRegex );
+  tokenizeDocument( text, indexOffset= 0 ) {
+    return Tokenizer._tokenize( text, this.documentRegex, indexOffset );
   }
 
-  tokenizeContainerBox( text ) {
-    return Tokenizer._tokenize( text, this.containerBoxRegex );
+  tokenizeContainerBox( text, indexOffset= 0 ) {
+    return Tokenizer._tokenize( text, this.containerBoxRegex, indexOffset );
   }
 
-  tokenizeParagraph( text ) {
-    return Tokenizer._tokenize( text, this.paragraphRegex );
+  tokenizeParagraph( text, indexOffset= 0 ) {
+    return Tokenizer._tokenize( text, this.paragraphRegex, indexOffset );
   }
 
-  tokenizeTable( text ) {
-    return Tokenizer._tokenize( text, this.tableRegex );
+  tokenizeTable( text, indexOffset= 0 ) {
+    return Tokenizer._tokenize( text, this.tableRegex, indexOffset );
   }
 }
 
@@ -480,6 +480,7 @@ const ResourceToken= Mixin( klass => {
   return class RessourceToken extends klass {
     constructor( text, offset, ...args ) {
       super(...args);
+      console.log(text, offset, args);
 
       this.text= null;
       this.resource= null;
@@ -606,7 +607,11 @@ const TokenType= {
 Enum.initPlainObject( TokenType );
 
 class Token {
-  static createFromMatch( match ) {
+  constructor( sourceIndex ) {
+    this.sourceIndex= sourceIndex;
+  }
+
+  static createFromMatch( match, indexOffset ) {
     const groups= match.groups;
     let key= null;
     for( key in groups ) {
@@ -620,7 +625,7 @@ class Token {
       return null;
     }
 
-    return TokenMatchGroups[key].create(groups[key]);
+    return TokenMatchGroups[key].create(match.index+ indexOffset, groups[key]);
   }
 
   static _resolveTokenClass( baseClass ) {
@@ -661,7 +666,7 @@ class Token {
   }
 
   print( p ) {
-    p.print( this.name() );
+    p.print( this.name(), '@'+ this.sourceIndex );
   }
 
   consumeTokens( it ) {
@@ -686,8 +691,8 @@ class DivisionToken extends Token {
 DivisionToken._tokenType= TokenType.DivisionToken;
 
 class ParentToken extends Token {
-  constructor() {
-    super();
+  constructor( idx ) {
+    super( idx );
     this.children= [];
   }
 
@@ -787,14 +792,14 @@ class ParentToken extends Token {
 }
 
 class Paragraph extends ParentToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
 
     if( text === null ) {
       return;
     }
 
-    const tokens= Kekpiler.the().tokenizer().tokenizeParagraph( text );
+    const tokens= Kekpiler.the().tokenizer().tokenizeParagraph( text, idx );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -825,11 +830,11 @@ class Paragraph extends ParentToken {
 Paragraph._tokenType= TokenType.Paragraph;
 
 class Quote extends ParentToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
 
     const content= text.replace(new RegExp(quotePrefixRegex), '');
-    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, idx );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -840,15 +845,15 @@ class Quote extends ParentToken {
 Quote._tokenType= TokenType.Quote;
 
 class ContainerBox extends ParentToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     assert( text[2] === ':' );
 
     const endOfLine= text.indexOf('\n')+ 1;
     this.containerType= text.substring(3, endOfLine).trim();
 
     const content= text.substring(endOfLine, text.length- 3)
-    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, idx+ endOfLine );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -870,7 +875,7 @@ ContainerBox._tokenType= TokenType.ContainerBox;
 
 class Document extends ParentToken {
   constructor( text ) {
-    super();
+    super( 0 );
 
     const tokens= Kekpiler.the().tokenizer().tokenizeDocument( text );
     this._createChildrenFromTokenList( tokens );
@@ -883,8 +888,8 @@ class Document extends ParentToken {
 Document._tokenType= TokenType.Document;
 
 class List extends ParentToken {
-  constructor( tokens, useParagraph= false ) {
-    super();
+  constructor( idx, tokens, useParagraph= false ) {
+    super( idx );
     this.children= tokens;
 
     this.paragraphMode= useParagraph;
@@ -892,7 +897,7 @@ class List extends ParentToken {
   }
 
   _printSelf( p ) {
-    p.print('List', this.paragraphMode ? '-PAR-' : '');
+    p.print('List', this.paragraphMode ? '-PAR-' : '', '@'+ this.sourceIndex);
   }
 
   _htmlElementTag() {
@@ -906,8 +911,8 @@ class List extends ParentToken {
 List._tokenType= TokenType.List;
 
 class ListItemToken extends ParentToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
 
     this.hoistParagraphContent= false;
 
@@ -922,7 +927,7 @@ class ListItemToken extends ParentToken {
     // Tokenize
     const prefixLength= (new RegExp(itemPrefixRegex)).exec( text )[0].length;
     const content= text.substring( prefixLength ).replace( wsRegex, '\n' );
-    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, idx+ prefixLength );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -959,7 +964,7 @@ class ListItemToken extends ParentToken {
 
   consumeTokens( it ) {
     const {tokens, useParagraph}= this._findNeighbouringTokens( it );
-    return List.create( tokens, useParagraph );
+    return List.create( this.sourceIndex, tokens, useParagraph );
   }
 
   _htmlElementTag() {
@@ -992,7 +997,7 @@ class ListItemToken extends ParentToken {
   }
 
   _printSelf( p ) {
-    p.print('- Item');
+    p.print('- Item @'+ this.sourceIndex);
   }
 }
 
@@ -1012,8 +1017,8 @@ EnumerationItem._tokenType= TokenType.EnumerationItem;
 
 
 class TextToken extends Token {
-  constructor( text= null ) {
-    super();
+  constructor( idx, text= null ) {
+    super( idx );
     this.text= text;
   }
 
@@ -1033,17 +1038,17 @@ TextToken._tokenType= TokenType.Text;
 
 
 class EscapedText extends TextToken {
-  constructor( text ) {
+  constructor( idx, text ) {
     // Remove the back slash
-    super( text[1] );
+    super( idx, text[1] );
   }
 }
 EscapedText._tokenType= TokenType.EscapedText;
 
 
 class Header extends TextToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     text= text.trim();
 
     let cnt= 0;
@@ -1072,8 +1077,8 @@ Header._tokenType= TokenType.Header;
 
 
 class Code extends TextToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     assert( text.substring(0,3) === '```', 'Expected code block to start with ```' );
 
     // Remove begin and end sequence, and extract language name
@@ -1096,8 +1101,8 @@ Code._tokenType= TokenType.Code;
 
 
 class StyledText extends TextToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
 
     let emphasisCount= 0;
     let strikeThrough= false;
@@ -1144,9 +1149,9 @@ class StyledText extends TextToken {
 StyledText._tokenType= TokenType.StyledText;
 
 class InlineCode extends TextToken {
-  constructor( text ) {
+  constructor( idx, text ) {
     const off= ( text[1] === '`' && text[text.length-2] === '`') ? 2 : 1;
-    super( text.substring( off, text.length- off).trim() );
+    super( idx, text.substring( off, text.length- off).trim() );
   }
 
   render() {
@@ -1155,8 +1160,8 @@ class InlineCode extends TextToken {
 }
 
 class Link extends ResourceToken(TextToken) {
-  constructor( text ) {
-    super( text, 0 );
+  constructor( idx, text ) {
+    super( text, 0, idx );
   }
 
   resourceType() {
@@ -1172,11 +1177,11 @@ class Link extends ResourceToken(TextToken) {
 
 
 class Table extends ParentToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     this.fallBackText= text;
 
-    const tokens= Kekpiler.the().tokenizer().tokenizeTable( text );
+    const tokens= Kekpiler.the().tokenizer().tokenizeTable( text, idx );
     const it= new ArrayIterator( tokens );
 
     if( !it.hasNext() ) {
@@ -1273,8 +1278,8 @@ class Table extends ParentToken {
 Table._tokenType= TokenType.Table;
 
 class TableRow extends ParentToken {
-  constructor( columnCount= -1 ) {
-    super();
+  constructor( idx, columnCount= -1 ) {
+    super( idx );
     this.columnCount= columnCount;
   }
 
@@ -1310,16 +1315,16 @@ class TableHeaderRow extends TableRow {
 TableHeaderRow._tokenType= TokenType.TableHeaderRow;
 
 class TableCell extends Paragraph {
-  constructor( text ) {
+  constructor( idx, text ) {
     // (Shallow) copy construct
-    if( text instanceof TableCell ) {
-      super( null );
-      Object.assign(this, text);
+    if( idx instanceof TableCell ) {
+      super( idx.sourceIndex, null );
+      Object.assign(this, idx);
       return;
     }
 
     // Init internal paragraph with text (without the pipe symbol)
-    super( text.substring(1) );
+    super( idx, text.substring(1) );
     this.alignment= TableColumnAlignment.Left;
   }
 
@@ -1328,7 +1333,7 @@ class TableCell extends Paragraph {
   }
 
   toHeaderCell() {
-    return new TableHeaderCell( this );
+    return TableHeaderCell.create( this );
   }
 
   setLayout( alignment ) {
@@ -1345,16 +1350,18 @@ class TableHeaderCell extends TableCell {
 TableHeaderCell._tokenType= TokenType.TableHeaderCell;
 
 class TableHeaderDivision extends DivisionToken {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     this.text= text.trim();
 
     assert( this.text[0] === '|' );
     assert( this.text[this.text.length-1] === '|' );
 
     // Manually break up the row into cells
+    let srcIdx= idx;
     this.columns= [];
     this.text.substring(1, this.text.length-1).split('|').forEach( col => {
+      const colLength= col.length;
       col= col.trim();
 
       // Use left alignment as the default
@@ -1365,14 +1372,17 @@ class TableHeaderDivision extends DivisionToken {
 
       this.columns.push({
         text: col,
+        idx: srcIdx,
         alignment
       });
+
+      srcIdx+= colLength+ 1;
     });
   }
 
   toTableRow() {
     const row= new TableRow();
-    this.columns.forEach( c => row.appendChild(new TableCell(c.text)) );
+    this.columns.forEach( c => row.appendChild(TableCell.create(c.idx, c.text)) );
     return row;
   }
 
@@ -1391,8 +1401,8 @@ TableRowDivision._tokenType= TokenType.TableRowDivision;
 
 
 class Image extends ResourceToken( Token ) {
-  constructor( text ) {
-    super( text, 1 );
+  constructor( idx, text ) {
+    super( text, 1, idx );
     assert( text[0] === '!' );
   }
 
@@ -1416,8 +1426,12 @@ Image._tokenType= TokenType.Image;
 
 
 class CustomBlock extends ResourceToken(Token) {
-  constructor( text ) {
-    super(text, 1);
+  constructor( idx, text ) {
+    if( idx instanceof CustomBlock ) {
+      super( idx, 1 );
+    } else {
+      super( text, 1, idx );
+    }
 
     // Rename the inner text to better reflect its purpose
     this.blockType= this.text;
@@ -1460,8 +1474,8 @@ CustomBlock._tokenType= TokenType.CustomBlock;
 
 
 class Reference extends Token {
-  constructor( text ) {
-    super();
+  constructor( idx, text ) {
+    super( idx );
     const splitIdx= text.indexOf(']:');
     assert( text[0] === '[');
     assert( splitIdx > 0 );
