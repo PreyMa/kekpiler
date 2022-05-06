@@ -32,6 +32,7 @@ class CompoundRegularExpression {
 }
 
 const itemPrefixRegex= /[^\S\r\n]*([\*\+-]|(\d+\.))/gm;
+const quotePrefixRegex= /^[^\S\r\n]*>/gm;
 
 const documentRegex= new CompoundRegularExpression(
   /(?<comm><!--[\s\S]*?-->)|/gm,
@@ -44,7 +45,7 @@ const documentRegex= new CompoundRegularExpression(
   /(?<item>[^\S\r\n]*[\*\+-][^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
   /(?<enum>[^\S\r\n]*\d+\.[^\S\r\n]((```([\s\S](?!```))*[\S\s]``)|[\S\s](?!(\r?\n([\*\+-]|(\d+\.))[^\S\r\n])|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n\r?\n(?![^\S\r\n]+\S))))*.)|/,
   /(?<table>(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n[^\S\r\n]*(\|[^\S\r\n]*[:-]-+[:-][^\S\r\n]*)+\|?[^\S\r\n]*\r?\n([^\S\r\n]*(\|[^\|\r\n]+)+\|?[^\S\r\n]*\r?\n)*)|/,
-  /(?<quote>[^\S\r\n]*>([\s\S](?!(\r?\n([^\S\r\n]*>[^\S\r\n]*)?\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))))*[\S\s](\r?\n[^\S\r\n]*>[^\S\r\n]*$)*)|/,
+  /(?<quote>[^\S\r\n]*>(?!\r?\n)([\s\S](?!(\r?\n[^\S\r\n]*\r?\n)|(\r?\n[^\S\r\n]*>[^\S\r\n]*\r?\nh)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))))*[\S\s](\r?\n[^\S\r\n]*>[^\S\r\n]*)*)|/,
   /(?<par>(?=\S)([\s\S](?!(\r?\n\r?\n)|(\r?\n(```|:::))|([!@]\[.*\]((\(.*\))|(\[.*\])))|(\r?\n[^\S\r\n]*([\*\+-]|(\d+\.))[^\S\r\n])))*[\S\s])|/,
   /(?<hdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*\r?\n\s*)|/,
   /(?<sdiv>\r?\n[^\S\r\n]*\r?\n[^\S\r\n]*)/
@@ -824,7 +825,17 @@ class Paragraph extends ParentToken {
 Paragraph._tokenType= TokenType.Paragraph;
 
 class Quote extends ParentToken {
+  constructor( text ) {
+    super();
 
+    const content= text.replace(new RegExp(quotePrefixRegex), '');
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content );
+    this._createChildrenFromTokenList( tokens );
+  }
+
+  _htmlElementTag() {
+    return 'blockquote';
+  }
 }
 Quote._tokenType= TokenType.Quote;
 
@@ -1500,7 +1511,7 @@ const TokenMatchGroups= {
   item: ItemizedItem,
   link: Link,
   par: Paragraph,
-  qoute: Quote,
+  quote: Quote,
   ref: Reference,
   sdiv: SoftDivision,
   style: StyledText,
