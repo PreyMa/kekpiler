@@ -1064,7 +1064,8 @@ class Header extends TextToken {
   }
 
   render() {
-    return new HtmlElementBuilder('h'+ this.level, new HtmlTextBuilder(this.text));
+    const level= this.level+ Kekpiler.the().config().headingLevelOffset;
+    return new HtmlElementBuilder('h'+ level, new HtmlTextBuilder(this.text));
   }
 }
 Header._tokenType= TokenType.Header;
@@ -1544,7 +1545,8 @@ class Kekpiler {
 
   constructor( userConfig ) {
     this.userConfig= Object.assign({
-      userContentPrefix: 'md_'
+      userContentPrefix: 'md_',
+      headingLevelOffset: 0
     }, userConfig);
 
     this.extensions= [];
