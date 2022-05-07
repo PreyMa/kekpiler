@@ -136,6 +136,24 @@ function escapeHtml( str, removeNL= false ) {
   return removeNL ? str.replaceAll('\n', ' ') : str;
 }
 
+class EnumItem {
+  constructor(id, name, data= null) {
+    this._id= id;
+    this._name= name;
+    if( typeof data === 'object' ) {
+      Object.assign(this, data);
+    }
+  }
+
+  ordinal() {
+    return this._id;
+  }
+
+  name() {
+    return this._name;
+  }
+}
+
 class Enum {
   constructor( obj ) {
     this.__construct( obj );
@@ -157,7 +175,7 @@ class Enum {
 
     for(const key in this) {
       if( typeof key === 'string' && key[0] !== '_' ) {
-        this[key]= counter++;
+        this[key]= new EnumItem(counter++, key, this[key]);
       }
     }
 
