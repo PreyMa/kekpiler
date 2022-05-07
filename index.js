@@ -13,7 +13,12 @@ function getCompiler() {
 }
 
 async function compileMarkdown( markdownText ) {
-  return await getCompiler().compile( markdownText, true );
+  const comp= getCompiler();
+  const html= await comp.compile( markdownText, true );
+
+  comp.printMessages( Kek.ConsolePrinter.the() );
+
+  return html;
 }
 
 export * from './kekpiler.js';

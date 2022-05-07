@@ -102,6 +102,23 @@ function inheritsFrom(baseClass, childClass) {
   return false;
 }
 
+function binaryLowerBound(arr, value, comparator= (v,t) => v-t ) {
+  let m= 0;
+  let n= arr.length;
+  while( m < n ) {
+    const k= Math.floor((n + m) / 2);
+    const cmp= comparator(value, arr[k]);
+    if( cmp > 0 ) {
+      m= k+1;
+    } else if( cmp === 0 ) {
+      return k;
+    } else {
+      n= k;
+    }
+  }
+  return m-1;
+}
+
 function Mixin( klassFactory ) {
 	const protoKey= Symbol('mixinKey');
 
@@ -217,6 +234,10 @@ class Printer {
     this.buffer= '';
   }
 
+  _append( text ) {
+    this.buffer+= text;
+  }
+
   push() {
     return this;
   }
@@ -226,7 +247,7 @@ class Printer {
   }
 
   print( ...vals ) {
-    this.buffer+= vals.join(' ')+ '\n';
+    this._append( vals.join(' ')+ '\n' );
     return this;
   }
 
@@ -263,8 +284,61 @@ class IndentPrinter extends Printer {
   }
 
   print( ...vals ) {
-    this.buffer+= this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr )+ '\n';
+    this._append( this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr )+ '\n' );
     return this;
+  }
+}
+
+class ConsolePrinter extends IndentPrinter {
+  constructor( sink, indent ) {
+    super( indent );
+
+    this.sinkFunction= sink;
+    this.buffer= undefined;
+  }
+
+  _append( text ) {
+    this.sinkFunction( text );
+  }
+
+  static the() {
+    return ConsolePrinter._instance;
+  }
+}
+ConsolePrinter._instance= new ConsolePrinter( text => console.log(text) );
+
+const MessageSeverity= {
+  Info: 0,
+  Warning: 0,
+  Error: 0
+};
+Enum.initPlainObject(MessageSeverity);
+
+class PositionalMessage {
+  constructor(token, severity, message) {
+    this.position= token.getSourceIndex();
+    this.sourceSnippet= token.sourceSnippet(-15, 15);
+    this.severityLevel= severity;
+    this.message= message;
+
+    const {line, column}= Kekpiler.the().calcLineColumnFromSourceIndex(this.position);
+    this.lineNum= line;
+    this.columnNum= column;
+  }
+
+  severity() {
+    return severity;
+  }
+
+  print( p ) {
+    p.print(`@${this.lineNum+1}:${this.columnNum+1} (${this.sourceSnippet}) ${this.severityLevel.name()}: ${this.message}`)
+  }
+}
+
+class CompilationError extends PositionalMessage {
+  constructor(token, message) {
+    super(token, MessageSeverity.Error, message);
+    this.trace= Error('Compiling error stack trace');
   }
 }
 
@@ -1643,10 +1717,12 @@ class Kekpiler {
 
   _reset() {
     this.source= null;
+    this.lineTable= null;
     this.document= null;
     this.domBuilder= null;
     this.resourceRequests= null;
     this.referenceRequests= null;
+    this.messages= [];
   }
 
   _setInstance( fn ) {
@@ -1693,6 +1769,23 @@ class Kekpiler {
 
   tokenizer() {
     return this.tokenizerInstance;
+  }
+
+  calcLineColumnFromSourceIndex( idx ) {
+    if( !this.lineTable ) {
+      this.lineTable= [ 0 ];
+
+      // Store the start index of each line in the array
+      const lineRegex= /\r?\n/gm;
+      let match= null;
+      while((match= lineRegex.exec(this.source)) !== null) {
+        this.lineTable.push( match.index+ 1 );
+      }
+    }
+
+    const line= binaryLowerBound(this.lineTable, idx);
+    const column= line >= 0 ? idx - this.lineTable[line] : -1;
+    return {line, column};
   }
 
   requestResource( r ) {
@@ -1794,6 +1887,27 @@ class Kekpiler {
     }
   }
 
+  _addMessage( severity, token, text ) {
+    const msg= (severity === MessageSeverity.Error) ?
+      new CompilationError( token, text ) :
+      new PositionalMessage( token, severity, text );
+
+    this.messages.push( msg );
+    return msg;
+  }
+
+  addInfoMessage( token, text ) {
+    this._addMessage( MessageSeverity.Info, token, text );
+  }
+
+  addWarningMessage( token, text ) {
+    this._addMessage( MessageSeverity.Warning, token, text );
+  }
+
+  addErrorMessage( token, text ) {
+    throw this._addMessage( MessageSeverity.Error, token, text );
+  }
+
   async _preTokenizeCalls( markdown ) {
     for( const ex of this.extensions ) {
       const res= await ex.preTokenize( this, markdown );
@@ -1803,6 +1917,10 @@ class Kekpiler {
     }
 
     return markdown;
+  }
+
+  printMessages( p ) {
+    this.messages.forEach( m => m.print(p) );
   }
 
   async _preRenderCalls() {
@@ -1876,6 +1994,10 @@ class KekpilerProxy {
   compile(...args) {
     return this.kekpiler.compile(...args);
   }
+
+  printMessages(...args) {
+    return this.kekpiler.printMessages(...args);
+  }
 }
 
 const StyleExports= {
@@ -1933,6 +2055,7 @@ export {
   ArrayIterator,
   Printer,
   IndentPrinter,
+  ConsolePrinter,
   HtmlBuilder,
   HtmlSingleElementBuilder,
   HtmlElementBuilder,
@@ -1941,6 +2064,9 @@ export {
   IterationDecisionType,
   IterationDecision,
   Extension,
+  MessageSeverity,
+  PositionalMessage,
+  CompilationError,
   Kekpiler as KekpilerImpl,
   KekpilerProxy as Kekpiler,
   StyleExports as Style,
