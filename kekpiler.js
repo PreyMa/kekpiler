@@ -665,8 +665,16 @@ class Token {
     abstractMethod();
   }
 
+  getSourceIndex() {
+    return this.sourceIndex;
+  }
+
+  sourceSnippet(offsetStart= 0, offsetEnd= 10) {
+    return Kekpiler.the().source.substring(this.sourceIndex, this.sourceIndex+10).replaceAll('\n', ' ').replaceAll('\r', '');
+  }
+
   print( p ) {
-    p.print( this.name(), '@'+ this.sourceIndex );
+    p.print( this.name(), `@${this.sourceIndex} (${this.sourceSnippet()})`);
   }
 
   consumeTokens( it ) {
@@ -834,7 +842,11 @@ class Quote extends ParentToken {
     super( idx );
 
     const content= text.replace(new RegExp(quotePrefixRegex), '');
-    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, idx );
+
+    // FIXME: This is a hack to average out the index error created by removing
+    // the quote prefix.
+    const contentIndex= idx+ Math.floor((text.length - content.length) / 2);
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, contentIndex );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -897,7 +909,7 @@ class List extends ParentToken {
   }
 
   _printSelf( p ) {
-    p.print('List', this.paragraphMode ? '-PAR-' : '', '@'+ this.sourceIndex);
+    p.print('List', this.paragraphMode ? '-PAR-' : '', `@${this.sourceIndex} (${this.sourceSnippet()})`);
   }
 
   _htmlElementTag() {
@@ -927,7 +939,11 @@ class ListItemToken extends ParentToken {
     // Tokenize
     const prefixLength= (new RegExp(itemPrefixRegex)).exec( text )[0].length;
     const content= text.substring( prefixLength ).replace( wsRegex, '\n' );
-    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, idx+ prefixLength );
+
+    // FIXME: This is a hack to average out the index error created by removing
+    // the whitespace before each line.
+    const contentIndex= idx+ prefixLength+ Math.floor((text.length -prefixLength -content.length) / 2);
+    const tokens= Kekpiler.the().tokenizer().tokenizeContainerBox( content, contentIndex );
     this._createChildrenFromTokenList( tokens );
   }
 
@@ -997,7 +1013,7 @@ class ListItemToken extends ParentToken {
   }
 
   _printSelf( p ) {
-    p.print('- Item @'+ this.sourceIndex);
+    p.print(`-Item @${this.sourceIndex} (${this.sourceSnippet()})`);
   }
 }
 
@@ -1189,7 +1205,7 @@ class Table extends ParentToken {
     }
 
     // Make the header row the first child by default
-    const header= new TableHeaderRow();
+    const header= TableHeaderRow.create(idx);
     this.appendChild( header );
 
     // Get all cells that make up the header until the header div is reached
@@ -1608,6 +1624,7 @@ class Kekpiler {
   }
 
   _reset() {
+    this.source= null;
     this.document= null;
     this.domBuilder= null;
     this.resourceRequests= null;
@@ -1790,6 +1807,7 @@ class Kekpiler {
     markdown= await this._preTokenizeCalls( markdown );
 
     this._setInstance(() => {
+      this.source= markdown;
       this._buildTree( markdown );
     });
 
