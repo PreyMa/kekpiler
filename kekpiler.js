@@ -234,8 +234,8 @@ class Printer {
     this.buffer= '';
   }
 
-  _append( text ) {
-    this.buffer+= text;
+  _appendLine( text ) {
+    this.buffer+= text+ '\n';
   }
 
   push() {
@@ -247,7 +247,7 @@ class Printer {
   }
 
   print( ...vals ) {
-    this._append( vals.join(' ')+ '\n' );
+    this._appendLine( vals.join(' ') );
     return this;
   }
 
@@ -284,7 +284,7 @@ class IndentPrinter extends Printer {
   }
 
   print( ...vals ) {
-    this._append( this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr )+ '\n' );
+    this._appendLine( this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr ) );
     return this;
   }
 }
@@ -297,7 +297,7 @@ class ConsolePrinter extends IndentPrinter {
     this.buffer= undefined;
   }
 
-  _append( text ) {
+  _appendLine( text ) {
     this.sinkFunction( text );
   }
 
