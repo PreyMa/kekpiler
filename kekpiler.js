@@ -361,7 +361,7 @@ class PositionalMessage {
   }
 
   print( p ) {
-    p.print(`@${this.lineNum+1}:${this.columnNum+1} (${this.sourceSnippet}) ${this.severityLevel.name()}: ${this.message}`)
+    p.print(`@${this.lineNum+1}:${this.columnNum+1} (...${this.sourceSnippet}...) ${this.severityLevel.name()}: ${this.message}`)
   }
 }
 
@@ -1542,6 +1542,11 @@ class Image extends ResourceToken( Token ) {
   constructor( idx, text ) {
     super( text, 1, idx );
     assert( text[0] === '!' );
+
+    if( !this.text.trim() ) {
+      const level= MessageSeverity._getItem( Kekpiler.the().config().imageWithoutAltTextMessageLevel );
+      Kekpiler.the().addMessage(level, this, 'Image is missing alt text');
+    }
   }
 
   resourceType() {
@@ -1698,7 +1703,8 @@ class Kekpiler {
   constructor( userConfig ) {
     this.userConfig= Object.assign({
       userContentPrefix: 'md_',
-      headingLevelOffset: 0
+      headingLevelOffset: 0,
+      imageWithoutAltTextMessageLevel: MessageSeverity.Warning
     }, userConfig);
 
     this.extensions= [];
@@ -1917,25 +1923,30 @@ class Kekpiler {
     }
   }
 
-  _addMessage( severity, token, text ) {
+  addMessage( severity, token, text ) {
     const msg= (severity === MessageSeverity.Error) ?
       new CompilationError( token, text ) :
       new PositionalMessage( token, severity, text );
 
     this.messages.push( msg );
+
+    if( severity === MessageSeverity.Error ) {
+      throw msg;
+    }
+
     return msg;
   }
 
   addInfoMessage( token, text ) {
-    this._addMessage( MessageSeverity.Info, token, text );
+    this.addMessage( MessageSeverity.Info, token, text );
   }
 
   addWarningMessage( token, text ) {
-    this._addMessage( MessageSeverity.Warning, token, text );
+    this.addMessage( MessageSeverity.Warning, token, text );
   }
 
   addErrorMessage( token, text ) {
-    throw this._addMessage( MessageSeverity.Error, token, text );
+    this.addMessage( MessageSeverity.Error, token, text );
   }
 
   async _preTokenizeCalls( markdown ) {
