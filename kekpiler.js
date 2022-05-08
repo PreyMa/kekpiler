@@ -762,7 +762,7 @@ class Token {
   }
 
   sourceSnippet(offsetStart= 0, offsetEnd= 10) {
-    return Kekpiler.the().source.substring(this.sourceIndex, this.sourceIndex+10).replaceAll('\n', ' ').replaceAll('\r', '');
+    return Kekpiler.the().source.substring(this.sourceIndex+ offsetStart, this.sourceIndex+ offsetEnd).replaceAll('\n', ' ').replaceAll('\r', '');
   }
 
   print( p ) {
