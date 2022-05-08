@@ -183,16 +183,24 @@ class Enum {
 
   __construct( obj ) {
     this._count= 0;
+    this._table= [];
     this._addKeys( obj );
   }
 
   __enumerate() {
     let counter= 0;
     this._count= 0;
+    this._table= [];
 
     for(const key in this) {
       if( typeof key === 'string' && key[0] !== '_' ) {
-        this[key]= new EnumItem(counter++, key, this[key]);
+        if( this[key] instanceof EnumItem ) {
+          this[key]._id= counter++;
+        } else {
+          this[key]= new EnumItem(counter++, key, this[key]);
+        }
+
+        this._table.push( this[key] );
       }
     }
 
@@ -202,6 +210,28 @@ class Enum {
   _addKeys( obj ) {
     Object.assign(this, obj);
     this.__enumerate();
+  }
+
+  _getItem( key ) {
+    if( key instanceof EnumItem ) {
+      if( this._table.some( item => item === key ) ) {
+        return key;
+      }
+    }
+
+    if( typeof key === 'number' ) {
+      if( key >= 0 && key < this._count ) {
+        return this._table[key];
+      }
+    }
+
+    if( typeof key === 'string' ) {
+      if( key[0] !== '_' && this.hasOwnProperty(key) ) {
+        return this[key];
+      }
+    }
+
+    return null;
   }
 }
 
