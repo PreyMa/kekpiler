@@ -143,14 +143,18 @@ function charIsWhitespace( c ) {
 
 // Based on https://stackoverflow.com/a/6234804
 function escapeHtml( str, removeNL= false ) {
-  str= str.replaceAll('&', '&amp;')
-          .replaceAll("'", '&#039;')
-          .replaceAll('"', '&quot;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('\r', '');
+  const htmlRegex= removeNL ? /[&<>'"\r\n]/gm : /[&<>'"\r]/gm;
+  const escapeTable= {
+    '&': '&amp;',
+    "'": '&#039;',
+    '"': '&quot;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '\r': '',
+    '\n': ' '
+  };
 
-  return removeNL ? str.replaceAll('\n', ' ') : str;
+  return str.replaceAll( htmlRegex, char => escapeTable[char] );
 }
 
 class EnumItem {
