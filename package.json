@@ -2,7 +2,7 @@
   "name": "kekpiler",
   "version": "1.0.0",
   "description": "A simple barebones markdown compiler using regular expressions",
-  "main": "index.mjs",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "node test"
