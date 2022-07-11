@@ -1,4 +1,18 @@
 
+// Kekpiler Markdown to HTML compiler written by PreyMa
+
+/**
+* Compound Regular Expression class
+* Combines the source of multiple regular exprssion objects into a single large
+* regular expression. The flags specified for the first part are copied to the final
+* expression object.
+* Very large regular exprssions need to be split into multiple lines to keep them
+* at least somewhat readable, but JS regexp cannot be simply split as the new line
+* character will be included as a character literal. Writing them as string constants
+* makes them again hard to read and reduces help provided by the IDE/editor. This
+* lets one write a regex as multiple smaller parts which are concatenated on startup
+* like strings.
+**/
 class CompoundRegularExpression {
   constructor(...parts) {
     this.flags= '';
@@ -75,6 +89,8 @@ const tableRegex= new CompoundRegularExpression(
   /(?<tcell>\|((\\\|)|[^\|\r\n])+)/
 );
 
+// Throw an exception if the condition is not true. The message may be a function,
+// only evaluated on error, for error messages that are expensive to print/stringify
 function assert( cond, msg= 'Assertion failed' ) {
   if( !cond ) {
     msg= typeof msg === 'function' ? msg() : msg;
@@ -82,14 +98,18 @@ function assert( cond, msg= 'Assertion failed' ) {
   }
 }
 
+// Assert that always throws
 function assertNotReached( msg= 'Assertion failed: This section may not be reached' ) {
   return assert( false, msg );
 }
 
+// Marks a method body as abstract and always throws
 function abstractMethod() {
   throw Error('Abstract method');
 }
 
+// Check whether a child class inherits from a base class, via a linear search up
+// the prototype chain of the child class until the base class is found
 function inheritsFrom(baseClass, childClass) {
   if( typeof baseClass !== 'function' || typeof childClass !== 'function' ) {
     throw new Error('Cannot check inheritance relation of non-function objects');
@@ -107,6 +127,7 @@ function inheritsFrom(baseClass, childClass) {
   return false;
 }
 
+// Returns the index of the greates value in a sorted array smaller than a provided value
 function binaryLowerBound(arr, value, comparator= (v,t) => v-t ) {
   let m= 0;
   let n= arr.length;
@@ -124,6 +145,7 @@ function binaryLowerBound(arr, value, comparator= (v,t) => v-t ) {
   return m-1;
 }
 
+// Creates a Mixin class from a class factory function.
 function Mixin( klassFactory ) {
 	const protoKey= Symbol('mixinKey');
 
@@ -142,10 +164,12 @@ function Mixin( klassFactory ) {
   return wrapper;
 }
 
+// Checks whether a character is whitespace
 function charIsWhitespace( c ) {
   return ' \t\n\r\v'.indexOf(c) !== -1;
 }
 
+// Escape text as html by replacing certain characters with html identity sequences
 // Based on https://stackoverflow.com/a/6234804
 function escapeHtml( str, removeNL= false ) {
   const htmlRegex= removeNL ? /[&<>'"\r\n]/gm : /[&<>'"\r]/gm;
@@ -162,6 +186,10 @@ function escapeHtml( str, removeNL= false ) {
   return str.replaceAll( htmlRegex, char => escapeTable[char] );
 }
 
+/**
+* Enum Item class
+* Every item in an enum is represented by an intstance of an enum item
+**/
 class EnumItem {
   constructor(id, name, data= null) {
     if( typeof data === 'object' ) {
@@ -181,6 +209,14 @@ class EnumItem {
   }
 }
 
+/**
+* Enum class
+* This class is usually not instantiated directly. Instead objects consisting of
+* key value pairs are (forcefully) turned into enums by setting their prototype.
+* The values of the initialized object are replaced with enum items, that may store
+* data. Enumerated names may not start with an underscore.
+* This improves IDE support as the keys are known and text suggestions are better.
+*/
 class Enum {
   constructor( obj ) {
     this.__construct( obj );
@@ -245,6 +281,10 @@ class Enum {
   }
 }
 
+/**
+* Array Iterator class
+* Iterates over an array similarly like a Java List iterator
+**/
 class ArrayIterator {
   constructor( a ) {
     this.array= a;
@@ -269,6 +309,11 @@ class ArrayIterator {
   }
 }
 
+/**
+* Printer class
+* Base class for text printers supporting automatic block indentation. This base
+* class ignores indentation commandy and creates "minified" output.
+**/
 class Printer {
   constructor() {
     this.buffer= '';
@@ -303,6 +348,11 @@ class Printer {
   }
 }
 
+/**
+* Indente Printer class
+* Extends the base printer with indentation. Each pushed block state indenets each
+* appended line by the specified number of space characters.
+**/
 class IndentPrinter extends Printer {
   constructor( indent= 2 ) {
     super();
@@ -329,6 +379,10 @@ class IndentPrinter extends Printer {
   }
 }
 
+/**
+* Console Printer class
+* Allows for the specification of a sink function, where printed text is piped to.
+**/
 class ConsolePrinter extends IndentPrinter {
   constructor( sink, indent ) {
     super( indent );
@@ -354,6 +408,12 @@ const MessageSeverity= {
 };
 Enum.initPlainObject(MessageSeverity);
 
+/**
+* Positional Message class
+* Stores a compiler generated message to the user. Used for linting, warning and
+* error messages. Keeps additional information about the source location responsible
+* and severity.
+**/
 class PositionalMessage {
   constructor(token, severity, message) {
     this.position= token.getSourceIndex();
@@ -375,6 +435,11 @@ class PositionalMessage {
   }
 }
 
+/**
+* Compilation Error class
+* A positional message with error severity that stores a stack trace of when the
+* error was created.
+**/
 class CompilationError extends PositionalMessage {
   constructor(token, message) {
     super(token, MessageSeverity.Error, message);
@@ -382,6 +447,11 @@ class CompilationError extends PositionalMessage {
   }
 }
 
+/**
+* Html Builder class
+* Simple virtual DOM base class for html elements that can be converted into HTML
+* markup code.
+**/
 class HtmlBuilder {
   toHtmlString() {
     abstractMethod();
@@ -392,6 +462,11 @@ class HtmlBuilder {
   }
 }
 
+/**
+* Html Single Element Builder class
+* Virtual DOM element that does not have any children, eg <img/> tags.
+* Stores its tag type, CSS classes and arbitrary attributes.
+**/
 class HtmlSingleElementBuilder extends HtmlBuilder {
   constructor( tagName ) {
     super();
@@ -457,6 +532,10 @@ class HtmlSingleElementBuilder extends HtmlBuilder {
   }
 }
 
+/**
+* Html Element Builder class
+* Virtual DOM element that can store child elements.
+**/
 class HtmlElementBuilder extends HtmlSingleElementBuilder {
   constructor( tagName, ...children ) {
     super( tagName );
@@ -487,6 +566,10 @@ class HtmlElementBuilder extends HtmlSingleElementBuilder {
   }
 }
 
+/**
+* Html Text Builder class
+* Virtual DOM representation of text node content.
+**/
 class HtmlTextBuilder extends HtmlBuilder {
   constructor( text, escapeText= true ) {
     super();
@@ -503,6 +586,11 @@ class HtmlTextBuilder extends HtmlBuilder {
   }
 }
 
+/**
+* Tokenizer class
+* Regex driver class splitting the markdown source text into matched sections
+* categorized by their regex group name. Based on their group tokens are emitted.
+**/
 class Tokenizer {
   constructor() {
     this.documentRegex= documentRegex;
@@ -547,6 +635,11 @@ class Tokenizer {
   }
 }
 
+/**
+* Text Style class
+* Interface to transform a virtual dom text node to change its style. Usually the
+* text node is wrapped by another dom node to change its appearance, eg <strong>...</strong>
+**/
 class TextStyle {
   render() {
     abstractMethod();
@@ -557,6 +650,10 @@ class TextStyle {
   }
 }
 
+/**
+* None Style class
+* Helper class that does no transformation -> NOP
+**/
 class NoneStyle extends TextStyle {
   render( element ) {
     return element;
@@ -567,6 +664,10 @@ class NoneStyle extends TextStyle {
   }
 }
 
+/**
+* Multi Text Style class
+* Decorator to combine two text styles by calling them recursively.
+**/
 class MultiTextStyle extends TextStyle {
   constructor(oldStyle, newStyle) {
     super();
