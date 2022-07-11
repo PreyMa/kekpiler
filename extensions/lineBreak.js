@@ -1,6 +1,6 @@
 import * as Kek from '../kekpiler.js';
 
-class LineBreakToken extends Kek.Token.CustomBlock {
+class LineBreakToken extends Kek.Token.CustomBlock.extend() {
   render() {
     return new Kek.HtmlSingleElementBuilder('br');
   }

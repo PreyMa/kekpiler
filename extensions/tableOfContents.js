@@ -1,7 +1,7 @@
 import * as Kek from '../kekpiler.js';
 import {FragmentToken} from './fragments.js';
 
-class TableOfContents extends Kek.Token.CustomBlock {
+class TableOfContents extends Kek.Token.CustomBlock.extend() {
   constructor( text ) {
     super( text );
 

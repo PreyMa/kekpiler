@@ -766,17 +766,36 @@ class Token {
     return baseClass._injectedClass;
   }
 
-  static injectClass( baseClass, newClass ) {
-    if( !inheritsFrom(baseClass, newClass) ) {
-      throw new Error(`Injected class has to inherit from the overriden base class. '${newClass.name}' does not inherit from '${baseClass.name}'`);
+  static injectClass( newClass ) {
+    for( const baseClass of ExportedBaseTokensArray ) {
+      if( inheritsFrom(baseClass, newClass) ) {
+
+        const resolved= Token._resolveTokenClass(baseClass);
+        assert(
+          inheritsFrom(resolved, newClass),
+          `Injected class has to inherit from its most recently injected version. `+
+          `Make sure to inherit using '.extend()' eg: 'class MyToken extends Kek.Token.Header.extend() {}'. `+
+          `'${newClass.name}' does not inherit from '${resolved.name}'.`
+        );
+
+        baseClass._injectedClass= newClass;
+        return newClass;
+      }
     }
 
-    baseClass._injectedClass= newClass;
+    assertNotReached(
+      `Injected class has to inherit from one of the base classes defined in the list `+
+      `of exported token types. '${newClass.name}' does not inherit from any of them.`
+    );
   }
 
   static create(...args) {
     const klass= Token._resolveTokenClass( this );
     return new klass(...args);
+  }
+
+  static extend() {
+    return Token._resolveTokenClass( this );
   }
 
   name() {
@@ -1734,10 +1753,6 @@ class Kekpiler {
     return this;
   }
 
-  injectTokenClass(baseClass, newClass) {
-    Token.injectClass(baseClass, newClass);
-  }
-
   registerCustomBlockToken(name, klass) {
     if( !inheritsFrom(CustomBlock, klass) ) {
       throw new Error(`The class provided for custom block '${name}' has to inherit from the 'CustomBlock' class.`);
@@ -2094,6 +2109,8 @@ const TokenExports= {
   Token,
   TokenType,
 };
+
+const ExportedBaseTokensArray= Object.values(TokenExports).filter( k => typeof k === 'function' && inheritsFrom(Token, k) );
 
 export {
   assert,
