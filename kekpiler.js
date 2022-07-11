@@ -164,11 +164,12 @@ function escapeHtml( str, removeNL= false ) {
 
 class EnumItem {
   constructor(id, name, data= null) {
-    this._id= id;
-    this._name= name;
     if( typeof data === 'object' ) {
       Object.assign(this, data);
     }
+
+    this._id= id;
+    this._name= name;
   }
 
   ordinal() {
