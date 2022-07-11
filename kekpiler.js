@@ -28,6 +28,7 @@ class CompoundRegularExpression {
 
   append( regex ) {
     // todo
+    assertNotReached();
   }
 }
 
@@ -79,6 +80,10 @@ function assert( cond, msg= 'Assertion failed' ) {
     msg= typeof msg === 'function' ? msg() : msg;
     throw new Error( msg );
   }
+}
+
+function assertNotReached( msg= 'Assertion failed: This section may not be reached' ) {
+  return assert( false, msg );
 }
 
 function abstractMethod() {
@@ -2093,6 +2098,7 @@ const TokenExports= {
 
 export {
   assert,
+  assertNotReached,
   abstractMethod,
   escapeHtml,
   Mixin,
