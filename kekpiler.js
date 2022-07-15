@@ -17,32 +17,63 @@ class CompoundRegularExpression {
   constructor(...parts) {
     this.flags= '';
     this.regex= null;
-
-    if( parts.length && parts[0] ) {
-      this.flags= parts[0].flags;
-
-      // Copy constructor fast path
-      if( parts.length === 1 ) {
-        this.regex= new RegExp( parts[0] );
-        return;
-      }
-
-      const srcString= parts.reduce((src, reg) => src+ reg.source, '');
-      this.regex= new RegExp(srcString, this.flags);
-    }
+    this.sections= parts;
   }
 
+  _compileIfNecessary() {
+    // No valid regex to compile / combine
+    const firstSec= this.sections[0];
+    if( !this.sections.length || !firstSec ) {
+      return;
+    }
+
+    // Already compiled
+    if( this.regex ) {
+      return;
+    }
+
+    this.flags= firstSec.flags;
+
+    // Copy constructor fast path
+    if( this.sections.length === 1 ) {
+      this.regex= new RegExp( firstSec );
+      return;
+    }
+
+    const srcString= this.sections.reduce((src, reg) => src+ reg.source, '');
+    this.regex= new RegExp(srcString, this.flags);
+  }
+
+  // Duplicates the compiled regex, does not transfer the sections the regex is made of
   copy() {
+    // Even if this regex instance will be discarded in favor of the newly created instance,
+    // one of the two needs to be compiled at some point. By compiling this one instead
+    // of the new one, less compilations are necessary if this instance is copied multiple
+    // times for single use instances
+    this._compileIfNecessary();
     return new CompoundRegularExpression( this.regex );
   }
 
   exec( text ) {
+    this._compileIfNecessary();
     return this.regex.exec( text );
   }
 
   append( regex ) {
-    // todo
-    assertNotReached();
+    this.sections.push( regex );
+    this.regex= null;
+    return this;
+  }
+
+  insert(pos, regex) {
+    if( pos < 0 ) {
+      pos= this.sections.length +pos+ 1;
+    }
+    assert( pos >= 0 && pos < this.sections.length, `Index ${pos} (zero based) is out of range for compound regex`);
+
+    this.sections.splice(pos, 0, regex);
+    this.regex= null;
+    return this;
   }
 }
 
@@ -253,11 +284,20 @@ class Enum {
     this._count= counter;
   }
 
+  // Add a single name as a new key and re-enumerate
+  _addKey( keyName ) {
+    this[keyName]= 0;
+    this.__enumerate();
+  }
+
+  // Add all key-value-pairs of a provided object as keys and re-enumerate
   _addKeys( obj ) {
     Object.assign(this, obj);
     this.__enumerate();
   }
 
+  // Get a single enumeration item by either name, id or identity (eg. to check whether
+  // it is part of the enum)
   _getItem( key ) {
     if( key instanceof EnumItem ) {
       if( this._table.some( item => item === key ) ) {
@@ -633,6 +673,22 @@ class Tokenizer {
   tokenizeTable( text, indexOffset= 0 ) {
     return Tokenizer._tokenize( text, this.tableRegex, indexOffset );
   }
+
+  defineTextToken( name, klass, regex ) {
+
+    const klassName= klass.name;
+    assert(inheritsFrom(Token, klass), `To define a text token, a class needs to inherit from the Token base class. The class '${klassName}' does not inherit from 'Token'.`);
+    assert(!TokenMatchGroups[name], `Token regex group name is already in use '${name}'`);
+    assert(!TokenType[klassName], `Token klass name is already in use '${klassName}'`);
+
+    // TODO: Make this more generic.. Maybe even handle block level tokens?
+    TokenMatchGroups[name]= klass;
+    this.containerBoxRegex.insert( -3, regex ); // Before <par>
+    this.paragraphRegex.insert( -2, regex );    // Before <text>
+
+    TokenType._addKey(klassName);
+    klass._tokenType= TokenType[klassName];
+  }
 }
 
 /**
@@ -936,7 +992,7 @@ class Token {
     return this;
   }
 
-  render( p ) {
+  render() {
     abstractMethod();
   }
 }
