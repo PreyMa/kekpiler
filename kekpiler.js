@@ -106,12 +106,12 @@ const containerBoxRegex= new CompoundRegularExpression(
 );
 
 const paragraphRegex= new CompoundRegularExpression(
-  /(?<esc>\\[`_~*\\\[])|/gm,
+  /(?<esc>\\[`_~*\\\[\$])|/gm,
   /(?<icode2>``(([\s\S]```+)|[\S\s](?!``))*.``)|/,
   /(?<icode>`(?!`)(([\s\S]``+)|[\s\S](?!`))*.`)|/,
   /(?<link>\[.*\]((\(.*\))|(\[.*\])))|/,
   /(?<style>(?<s1>___|\*\*\*|__|\*\*|[_~\*])([\S\s](?!\k<s1>))*.\k<s1>)|/,
-  /(?<text>([\s\S](?![`_~*\\\[]))*.)/
+  /(?<text>([\s\S](?![`_~*\\\[\$]))*.)/
 );
 
 const tableRegex= new CompoundRegularExpression(
