@@ -24,27 +24,30 @@ class SimpleSlugger {
 }
 
 
-const SluggedHeader= Kek.Token.Token.injectClass(
-  class SluggedHeader extends FragmentToken(Kek.Token.Header.extend()) {
-    constructor(...args) {
-      super(...args);
+let SluggedHeader;
+function injectClassesImpl() {
+  SluggedHeader= Kek.Token.Token.injectClass(
+    class SluggedHeader extends FragmentToken(Kek.Token.Header.extend()) {
+      constructor(...args) {
+        super(...args);
 
-      this.slug= null;
-    }
+        this.slug= null;
+      }
 
-    createSlug( slugger ) {
-      this.slug= slugger.sluggify( this.text );
-    }
+      createSlug( slugger ) {
+        this.slug= slugger.sluggify( this.text );
+      }
 
-    fragmentId() {
-      return this.slug;
-    }
+      fragmentId() {
+        return this.slug;
+      }
 
-    title() {
-      return this.text;
+      title() {
+        return this.text;
+      }
     }
-  }
-);
+  );
+}
 
 export class HeaderSluggerExtension extends Kek.Extension {
   constructor() {
@@ -55,6 +58,10 @@ export class HeaderSluggerExtension extends Kek.Extension {
   init( kek ) {
     this.slugger= new SimpleSlugger( kek.config().userContentPrefix );
     return 'HeaderSlugger';
+  }
+
+  injectClasses() {
+    injectClassesImpl();
   }
 
   preTokenize() {

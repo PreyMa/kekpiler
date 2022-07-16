@@ -1877,6 +1877,7 @@ const DefaultStyle= {
 
 class Extension {
   init() {}
+  injectClasses() {}
   async preTokenize( comp, markdown ) {}
   async locateResources( comp ) {}
   async preRender( comp ) {}
@@ -1884,7 +1885,6 @@ class Extension {
 }
 
 class Kekpiler {
-
   constructor( userConfig ) {
     this.userConfig= Object.assign({
       userContentPrefix: 'md_',
@@ -2130,6 +2130,18 @@ class Kekpiler {
     this.addMessage( MessageSeverity.Error, token, text );
   }
 
+  _injectExtensionClassesCalls() {
+    if( Kekpiler._didInjectClasses ) {
+      return;
+    }
+
+    for( const ex of this.extensions ) {
+      ex.injectClasses();
+    }
+
+    Kekpiler._didInjectClasses= true;
+  }
+
   async _preTokenizeCalls( markdown ) {
     for( const ex of this.extensions ) {
       const res= await ex.preTokenize( this, markdown );
@@ -2161,6 +2173,8 @@ class Kekpiler {
     this._setInstance(() => {
       this._reset();
     });
+
+    this._injectExtensionClassesCalls();
 
     markdown= await this._preTokenizeCalls( markdown );
 
@@ -2195,6 +2209,7 @@ class Kekpiler {
 }
 /** @type {Kekpiler} **/
 Kekpiler._instance= null;
+Kekpiler._didInjectClasses= false;
 
 class KekpilerProxy {
   constructor(...args) {
