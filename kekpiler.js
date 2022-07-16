@@ -139,23 +139,29 @@ function abstractMethod() {
   throw Error('Abstract method');
 }
 
+// Call function for all classes in the prototype chain of a provided class
+function forEachPrototype( klass, cb ) {
+  assert(typeof klass === 'function', 'Argument error: Expected a function');
+
+  while( klass ) {
+    if( cb( klass ) === IterationDecision.Break ) {
+      return IterationDecision.Break;
+    }
+
+    klass= Object.getPrototypeOf( klass );
+  }
+}
+
 // Check whether a child class inherits from a base class, via a linear search up
 // the prototype chain of the child class until the base class is found
 function inheritsFrom(baseClass, childClass) {
-  if( typeof baseClass !== 'function' || typeof childClass !== 'function' ) {
-    throw new Error('Cannot check inheritance relation of non-function objects');
-  }
+  assert(
+    typeof baseClass === 'function' && typeof childClass === 'function',
+    'Cannot check inheritance relation of non-function objects'
+  );
 
-  let k= childClass;
-  while( k ) {
-    if( k === baseClass ) {
-      return true;
-    }
-
-    k= Object.getPrototypeOf( k );
-  }
-
-  return false;
+  const res= forEachPrototype( childClass, k => k === baseClass ? IterationDecision.Break : IterationDecision.Continue );
+  return res === IterationDecision.Break;
 }
 
 // Returns the index of the greates value in a sorted array smaller than a provided value
@@ -925,26 +931,32 @@ class Token {
   }
 
   static injectClass( newClass ) {
-    for( const baseClass of ExportedBaseTokensArray ) {
-      if( inheritsFrom(baseClass, newClass) ) {
-
-        const resolved= Token._resolveTokenClass(baseClass);
-        assert(
-          inheritsFrom(resolved, newClass),
-          `Injected class has to inherit from its most recently injected version. `+
-          `Make sure to inherit using '.extend()' eg: 'class MyToken extends Kek.Token.Header.extend() {}'. `+
-          `'${newClass.name}' does not inherit from '${resolved.name}'.`
-        );
-
-        baseClass._injectedClass= newClass;
-        return newClass;
+    // Find the most specific base class from the list of base token classes, by
+    // walking up the prototype chain and looking for the first class that fits
+    let baseClass= null;
+    forEachPrototype( newClass, k => {
+      if( ExportedBaseTokensArray.indexOf(k) >= 0 ) {
+        baseClass= k;
+        return IterationDecision.Break;
       }
-    }
+    });
 
-    assertNotReached(
+    assert(
+      baseClass,
       `Injected class has to inherit from one of the base classes defined in the list `+
       `of exported token types. '${newClass.name}' does not inherit from any of them.`
     );
+
+    const resolved= Token._resolveTokenClass(baseClass);
+    assert(
+      inheritsFrom(resolved, newClass),
+      `Injected class has to inherit from its most recently injected version. `+
+      `Make sure to inherit using '.extend()' eg: 'class MyToken extends Kek.Token.Header.extend() {}'. `+
+      `'${newClass.name}' does not inherit from '${resolved.name}'.`
+    );
+
+    baseClass._injectedClass= newClass;
+    return newClass;
   }
 
   static create(...args) {
