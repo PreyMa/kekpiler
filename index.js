@@ -3,6 +3,7 @@ import {TableOfContentsExtension} from './extensions/tableOfContents.js';
 import {HeaderSluggerExtension} from './extensions/headerSlugger.js';
 import {LineBreakExtension} from './extensions/lineBreak.js';
 import {TemmlMathExtension} from './extensions/temmlMath.js';
+import {FigureExtension} from './extensions/figure.js';
 
 let Temml= null;
 let temmlLoadFailed= false;
@@ -23,6 +24,7 @@ async function getCompiler() {
   k.use( new TableOfContentsExtension() );
   k.use( new HeaderSluggerExtension() );
   k.use( new LineBreakExtension() );
+  k.use( new FigureExtension() );
 
   if( Temml ) {
     k.use( new TemmlMathExtension(Temml) )

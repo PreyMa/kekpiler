@@ -345,12 +345,16 @@ class ArrayIterator {
     return this.array[this.idx];
   }
 
-  peek() {
-    return this.array[this.idx+ 1];
+  peek(offset= 1) {
+    return this.array[this.idx+ offset];
   }
 
-  next() {
-    this.idx++;
+  remainingItems() {
+    return this.array.length- this.idx;
+  }
+
+  next(offset= 1) {
+    this.idx+= offset;
     return this.get();
   }
 }
