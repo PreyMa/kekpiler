@@ -820,7 +820,8 @@ const ResourceToken= Mixin( klass => {
     }
 
     _setupRequestCallback() {
-      if( this.resourceUrl ) {
+      // Is already resolved or does not need a resource
+      if( this.resourceUrl || this.resourceType === 'none') {
         return;
       }
 
