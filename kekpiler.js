@@ -2088,8 +2088,22 @@ class Kekpiler {
     });
   }
 
+  _setReferenceRequestsToDefaultValue() {
+    if( this.referenceRequests ) {
+      // All reference request that were never upraded to be resource requests
+      this.referenceRequests.forEach( obj => {
+        obj.requests.forEach( req => {
+          req.trySetResourceUrl( req.referenceName() );
+        })
+      });
+    }
+  }
+
   async _resolveResources() {
     if( !this.resourceRequests ) {
+      // Although there are no resource requests, there might still be referece
+      // requests, that will be unresolveable in this case -> Just default set them
+      this._setReferenceRequestsToDefaultValue();
       return;
     }
 
@@ -2106,14 +2120,7 @@ class Kekpiler {
       })
     });
 
-    if( this.referenceRequests ) {
-      // All reference request that were never upraded to be resource requests
-      this.referenceRequests.forEach( obj => {
-        obj.requests.forEach( req => {
-          req.trySetResourceUrl( req.referenceName() );
-        })
-      });
-    }
+    this._setReferenceRequestsToDefaultValue();
   }
 
   addMessage( severity, token, text ) {
