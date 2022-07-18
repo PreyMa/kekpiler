@@ -769,21 +769,24 @@ class CodeStyle extends TextStyle {
 /**
 * Resource Token Mixin Class
 * This mixin parses resource blocks like images, links, custom blocks and makes the
-* appropriate requests to the compiler
+* appropriate requests to the compiler. The base class 'klass' is expected to have
+* a copy constructor, that takes an instance of itself.
 */
 const ResourceToken= Mixin( klass => {
-  return class RessourceToken extends klass {
+  return class ResourceToken extends klass {
     constructor( text, offset, ...args ) {
+      // Copy construct
+      if( text instanceof ResourceToken ) {
+        super( text );
+        return this._copyConstruct( text );
+      }
+
       super(...args);
 
       this.text= null;
       this.resource= null;
       this.reference= null;
       this.resourceUrl= null;
-
-      if( text instanceof RessourceToken ) {
-        return this._copyConstruct( text );
-      }
 
       this._constructFromText( text, offset );
     }
@@ -901,7 +904,14 @@ const TokenType= {
 Enum.initPlainObject( TokenType );
 
 class Token {
+  /** @param{number|Token} sourceIndex **/
   constructor( sourceIndex ) {
+    // Copy construct
+    if( sourceIndex instanceof Token ) {
+      this.sourceIndex= sourceIndex.sourceIndex;
+      return;
+    }
+
     this.sourceIndex= sourceIndex;
   }
 
@@ -1352,8 +1362,15 @@ EnumerationItem._tokenType= TokenType.EnumerationItem;
 
 
 class TextToken extends Token {
+  /** @param{number|TextToken} idx **/
   constructor( idx, text= null ) {
     super( idx );
+
+    if( idx instanceof TextToken ) {
+      this.text= idx.text;
+      return;
+    }
+
     this.text= text;
   }
 
@@ -1789,7 +1806,7 @@ class CustomBlock extends ResourceToken(Token) {
 
   _setupRequestCallback() {
     // Do not setup a callback for a plain custom block
-    // A specialized custom block sets up its own callback
+    // A specialized custom block sets up its own callback (after copy construction)
     if( this._isSpecialized() ) {
       super._setupRequestCallback();
     }
