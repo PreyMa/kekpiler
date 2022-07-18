@@ -82,7 +82,7 @@ const quotePrefixRegex= /^[^\S\r\n]*>/gm;
 
 const documentRegex= new CompoundRegularExpression(
   /(?<comm><!--[\s\S]*?-->)|/gm,
-  /(?<head>[^\S\r\n]*#+.+)|/,
+  /(?<head>[^\S\r\n]*#+[^\S\r\n]+.+)|/,
   /(?<code>```(.+\r?\n)?([\s\S](?!```))*[\s\S](```)?)|/,
   /(?<box>:::(.+\r?\n)?([\s\S](?!:::))*[\s\S](:::)?)|/,
   /(?<img>!\[.*\]((\(.*\))|(\[.*\])))|/,
