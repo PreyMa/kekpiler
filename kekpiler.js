@@ -2280,10 +2280,6 @@ class KekpilerProxy {
     return this.kekpiler.use(...args);
   }
 
-  injectTokenClass(...args) {
-    return this.kekpiler.injectTokenClass(...args);
-  }
-
   registerCustomBlockToken(...args) {
     return this.kekpiler.registerCustomBlockToken(...args);
   }
