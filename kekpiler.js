@@ -1887,12 +1887,32 @@ const DefaultStyle= {
   ]
 };
 
+/**
+* Extension base class
+* Every extension has to inherit from this class. It stubbs out all callback
+* hook methods, to make extensions more concise.
+**/
 class Extension {
+  // Called before each compilation
+  // Returns the name of the extension as string
   init() {}
+
+  // Called once after init for each instance of the module
+  // Inject token classes into the inheritance hierarchy here
   injectClasses() {}
+
+  // Called before any tokenization happens
+  // Do any textual preprocessing here
   async preTokenize( comp, markdown ) {}
+
+  // Called after token tree completed, and before rendering to html
+  // Might not be called if no resource requests are pending
   async locateResources( comp ) {}
+
+  // Called before rendering to a virtual DOM
   async preRender( comp ) {}
+
+  // Called before the rendered DOM is stringified into html code
   async preStringify( comp ) {}
 }
 
@@ -1904,8 +1924,11 @@ class Kekpiler {
       imageWithoutAltTextMessageLevel: MessageSeverity.Warning
     }, userConfig);
 
+    /** @type{Extension[]} **/
     this.extensions= [];
+    /** @type{Map<string, Extension>} **/
     this.extensionMap= new Map();
+    /** @type{Map<string, typeof Extension>} **/
     this.customBlocks= new Map();
     this.tokenizerInstance= new Tokenizer();
     this._reset();
