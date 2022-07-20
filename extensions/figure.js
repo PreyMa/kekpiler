@@ -45,7 +45,7 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
       );
     } else {
       const kek= Kek.KekpilerImpl.the();
-      kek.addMessage(kek.config().missingFigureCaptionMessageLevel || Kek.MessageSeverity.Warning, this, 'Figure without caption found');
+      kek.addMessage(kek.config().missingFigureCaptionMessageLevel, this, 'Figure without caption found');
     }
 
     return figureElement;
@@ -59,7 +59,7 @@ class Caption extends Kek.Token.CustomBlock.extend() {
     // Expect token to have text content
     if( !this.resourceName() && !this.referenceName() ) {
       const kek= Kek.KekpilerImpl.the();
-      kek.addMessage(kek.config().emptyCaptionElementMessageLevel || Kek.MessageSeverity.Warning, this, 'Caption without any text content found');
+      kek.addMessage(kek.config().emptyCaptionElementMessageLevel, this, 'Caption without any text content found');
     }
   }
 
@@ -112,6 +112,11 @@ function injectClassesImpl() {
 
 export class FigureExtension extends Kek.Extension {
   init( kek ) {
+    kek.setConfigDefaults({
+      missingFigureCaptionMessageLevel: Kek.MessageSeverity.Warning,
+      emptyCaptionElementMessageLevel: Kek.MessageSeverity.Warning
+    });
+
     kek.registerCustomBlockToken('caption', Caption);
     return 'Figure';
   }
