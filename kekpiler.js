@@ -369,8 +369,8 @@ class Printer {
     this.buffer= '';
   }
 
-  _appendLine( text ) {
-    this.buffer+= text+ '\n';
+  _appendLine( text, brk= '\n' ) {
+    this.buffer+= text+ brk;
   }
 
   push() {
@@ -393,6 +393,11 @@ class Printer {
     return this;
   }
 
+  printNoBlock( fn ) {
+    fn();
+    return this;
+  }
+
   string() {
     return this.buffer;
   }
@@ -409,6 +414,7 @@ class IndentPrinter extends Printer {
     this.level= 0;
     this.indent= indent;
     this.indentStr= '';
+    this.doIndent= true;
   }
 
   push() {
@@ -424,7 +430,31 @@ class IndentPrinter extends Printer {
   }
 
   print( ...vals ) {
-    this._appendLine( this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr ) );
+    if( this.doIndent ) {
+      this._appendLine( this.indentStr + vals.join(' ').split('\n').join( '\n'+ this.indentStr ) );
+    } else {
+      this._appendLine( vals.join(' '), '' );
+    }
+
+    return this;
+  }
+
+  printNoBlock( fn ) {
+    // Save state before
+    const savedLevel= this.level;
+    const savedIndent= this.indent;
+    const savedIndentStr= this.indentStr;
+    const savedDoIndent= this.doIndent;
+
+    // Print with disabled indentation from now on
+    this.doIndent= false;
+    fn();
+
+    // Restore state
+    this.level= savedLevel;
+    this.indent= savedIndent;
+    this.indentStr= savedIndentStr;
+    this.doIndent= savedDoIndent;
     return this;
   }
 }
@@ -633,6 +663,19 @@ class HtmlTextBuilder extends HtmlBuilder {
 
   print( p ) {
     p.print( this.text );
+  }
+}
+
+/**
+* Html Pre Text Builder class
+* Virtual DOM representation of text node content that needs to be serialized without
+* any kind of pretty printing as whitespace is significant.
+**/
+class HtmlPreTextBuilder extends HtmlTextBuilder {
+  toHtmlString( p ) {
+    p.printNoBlock(() => {
+      super.toHtmlString( p );
+    });
   }
 }
 
@@ -1475,7 +1518,7 @@ class Code extends TextToken {
   render() {
     return new HtmlElementBuilder('pre',
               new HtmlElementBuilder('code',
-                new HtmlTextBuilder(this.text)));
+                new HtmlPreTextBuilder(this.text)));
   }
 }
 Code._tokenType= TokenType.Code;
