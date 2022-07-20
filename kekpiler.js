@@ -533,11 +533,18 @@ class CompilationError extends PositionalMessage {
 * markup code.
 **/
 class HtmlBuilder {
+  // Serialize the dom node and its contents as html code text
   toHtmlString() {
     abstractMethod();
   }
 
+  // Print the dom node and its contents for debug purposes
   print( p ) {
+    abstractMethod();
+  }
+
+  // Find the first descendant node or self that has the specified tag name
+  descendantWithTagname( name ) {
     abstractMethod();
   }
 }
@@ -610,6 +617,10 @@ class HtmlSingleElementBuilder extends HtmlBuilder {
       this._printBlock( p );
     });
   }
+
+  descendantWithTagname( name ) {
+    return this.tagName === name ? this : null;
+  }
 }
 
 /**
@@ -628,6 +639,12 @@ class HtmlElementBuilder extends HtmlSingleElementBuilder {
     }
   }
 
+  clearChildren() {
+    const children= this.children;
+    this.children= [];
+    return children;
+  }
+
   toHtmlString( p ) {
     const classes= this._classesToHtmlString();
     const attributes= this._attributesToHtmlString();
@@ -643,6 +660,16 @@ class HtmlElementBuilder extends HtmlSingleElementBuilder {
     this.children.forEach( c => {
       c.print( p );
     });
+  }
+
+  descendantWithTagname( name ) {
+    if( this.tagName === name ) {
+      return this;
+    }
+
+    let child;
+    this.children.some( c => child= c.descendantWithTagname(name) );
+    return child;
   }
 }
 
@@ -663,6 +690,10 @@ class HtmlTextBuilder extends HtmlBuilder {
 
   print( p ) {
     p.print( this.text );
+  }
+
+  descendantWithTagname( name ) {
+    return null;
   }
 }
 
@@ -688,14 +719,22 @@ class HtmlPreTextBuilder extends HtmlTextBuilder {
 * highlighters or latex-math compilers.
 **/
 class OpaqueHtmlBuilder extends HtmlBuilder {
-  constructor( html, name= 'opaque-html' ) {
+  constructor( html, name= 'opaque-html', whitespacePre= false ) {
     super();
     this.html= html;
     this.name= name;
+    this.keepWhitespace= whitespacePre;
   }
 
   toHtmlString( p ) {
-    p.print( this.html );
+    if( !this.keepWhitespace ) {
+      p.print( this.html );
+      return;
+    }
+
+    p.printNoBlock(() => {
+      p.print( this.html );
+    });
   }
 
   print( p ) {
