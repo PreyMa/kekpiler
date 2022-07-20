@@ -1964,11 +1964,13 @@ class Extension {
 
 class Kekpiler {
   constructor( userConfig ) {
-    this.userConfig= Object.assign({
+    this.userConfig= userConfig;
+
+    this.setConfigDefaults({
       userContentPrefix: 'md_',
       headingLevelOffset: 0,
       imageWithoutAltTextMessageLevel: MessageSeverity.Warning
-    }, userConfig);
+    });
 
     /** @type{Extension[]} **/
     this.extensions= [];
@@ -2063,6 +2065,10 @@ class Kekpiler {
 
   config() {
     return this.userConfig;
+  }
+
+  setConfigDefaults( defaultsObj ) {
+    return this.userConfig= Object.assign(defaultsObj, this.userConfig);
   }
 
   tokenizer() {
@@ -2306,6 +2312,14 @@ class KekpilerProxy {
 
   use(...args) {
     return this.kekpiler.use(...args);
+  }
+
+  config(...args) {
+    return this.kekpiler.config(...args);
+  }
+
+  setConfigDefaults(...args) {
+    return this.kekpiler.setConfigDefaults(...args);
   }
 
   registerCustomBlockToken(...args) {
