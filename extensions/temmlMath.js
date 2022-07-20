@@ -3,19 +3,9 @@ import * as Kek from '../kekpiler.js';
 
 const mathRegex= /(?<math>(?<!\\)\$([\s\S](?<![^\\]\$))+(?<!\\)\$)|/;
 
-class HtmlMathMlBuilder extends Kek.HtmlBuilder {
+class HtmlMathMlBuilder extends Kek.OpaqueHtmlBuilder {
   constructor( mathml ) {
-    super();
-
-    this.mathml= mathml;
-  }
-
-  toHtmlString( p ) {
-    p.print( this.mathml );
-  }
-
-  print( p ) {
-    p.print('<math>');
+    super( mathml, 'math-ml' );
   }
 }
 
