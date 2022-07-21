@@ -624,25 +624,77 @@ class HtmlSingleElementBuilder extends HtmlBuilder {
 }
 
 /**
+* Html Builder Node List Mixin Class
+* This class serves as an interface for html builder nodes that store other nodes
+* as children eg. html tags with child elements or a collection of spans
+**/
+const HtmlBuilderNodeList= Mixin( klass => {
+  return class HtmlBuilderNodeList extends klass {
+    constructor(...args) {
+      super(...args);
+      this.children= [];
+    }
+
+    appendChild( c ) {
+      if( c ) {
+        if( Array.isArray(c) ) {
+          this.children.push( ...c );
+          return;
+        }
+
+        this.children.push(c);
+      }
+    }
+
+    prependChild( c ) {
+      if( c ) {
+        if( Array.isArray(c) ) {
+          this.children.unshift( ...c );
+          return;
+        }
+
+        this.children.unshift( c );
+      }
+    }
+
+    clearChildren() {
+      const children= this.children;
+      this.children= [];
+      return children;
+    }
+
+    toHtmlString( p ) {
+      this.children.forEach( c => c.toHtmlString( p ) );
+    }
+
+    _superToHtmlString() {
+      super.toHtmlString( p );
+    }
+
+    print( p ) {
+      this.children.forEach( c => c.print( p ) );
+    }
+
+    _superPrint( p ) {
+      super.print( p );
+    }
+
+    descendantWithTagname( name ) {
+      let child;
+      this.children.some( c => child= c.descendantWithTagname(name) );
+      return child;
+    }
+  };
+});
+
+/**
 * Html Element Builder class
 * Virtual DOM element that can store child elements.
 **/
-class HtmlElementBuilder extends HtmlSingleElementBuilder {
+class HtmlElementBuilder extends HtmlBuilderNodeList(HtmlSingleElementBuilder) {
   constructor( tagName, ...children ) {
     super( tagName );
     this.children= children;
-  }
-
-  appendChild( c ) {
-    if( c ) {
-      this.children.push(c);
-    }
-  }
-
-  clearChildren() {
-    const children= this.children;
-    this.children= [];
-    return children;
   }
 
   toHtmlString( p ) {
@@ -650,16 +702,16 @@ class HtmlElementBuilder extends HtmlSingleElementBuilder {
     const attributes= this._attributesToHtmlString();
 
     p.print(`<${this.tagName}${classes}${attributes}>`).printBlock(() => {
-      this.children.forEach( c => {
-        c.toHtmlString( p );
-      });
+      super.toHtmlString( p );
     }).print(`</${this.tagName}>`);
   }
 
   _printBlock( p ) {
-    this.children.forEach( c => {
-      c.print( p );
-    });
+    super.print( p );
+  }
+
+  print( p ) {
+    super._superPrint( p );
   }
 
   descendantWithTagname( name ) {
@@ -667,9 +719,7 @@ class HtmlElementBuilder extends HtmlSingleElementBuilder {
       return this;
     }
 
-    let child;
-    this.children.some( c => child= c.descendantWithTagname(name) );
-    return child;
+    return super.descendantWithTagname( name );
   }
 }
 
@@ -2476,6 +2526,7 @@ export {
   Enum,
   Extension,
   HtmlBuilder,
+  HtmlBuilderNodeList,
   HtmlElementBuilder,
   HtmlSingleElementBuilder,
   HtmlTextBuilder,
