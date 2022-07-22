@@ -1,3 +1,5 @@
+import { performance } from 'perf_hooks';
+
 import * as Kek from './kekpiler.js';
 import {TableOfContentsExtension} from './extensions/tableOfContents.js';
 import {HeaderSluggerExtension} from './extensions/headerSlugger.js';
@@ -56,10 +58,15 @@ async function getCompiler() {
 }
 
 async function compileMarkdown( markdownText ) {
+  const startTime= performance.now();
   const comp= await getCompiler();
+
+  const initTime= performance.now();
   const html= await comp.compile( markdownText, true );
 
+  const compileTime= performance.now();
   comp.printMessages( Kek.ConsolePrinter.the() );
+  console.log(`Kekpiler init time: ${(initTime- startTime).toFixed(3)}ms compile time: ${(compileTime- initTime).toFixed(3)}ms`);
 
   return html;
 }
