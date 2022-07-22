@@ -2147,7 +2147,8 @@ class Kekpiler {
     this.setConfigDefaults({
       userContentPrefix: 'md_',
       headingLevelOffset: 0,
-      imageWithoutAltTextMessageLevel: MessageSeverity.Warning
+      imageWithoutAltTextMessageLevel: MessageSeverity.Warning,
+      debugPrinting: false
     });
 
     /** @type{Extension[]} **/
@@ -2212,6 +2213,18 @@ class Kekpiler {
 
   _buildTree( text ) {
     this.document= new Document( text );
+  }
+
+  _debug( func= null ) {
+    if( !this.userConfig.debugPrinting ) {
+      return false;
+    }
+
+    if( func ) {
+      func();
+    }
+
+    return true;
   }
 
   _dumpDocument() {
@@ -2460,20 +2473,17 @@ class Kekpiler {
     await this._preRenderCalls();
 
     this._setInstance(() => {
-
-      console.log( this._dumpDocument() );
+      this._debug(() => console.log( this._dumpDocument() ) );
 
       this._renderDocument();
-      console.log('~~~~~~~~~~~~~~~~~~~~~~');
-      console.log( this._dumpDomBuilder() );
+      this._debug(() => console.log('~~~~~~~~~~~~~~~~~~~~~~\n', this._dumpDomBuilder()) );
     });
 
     await this._preStringifyCalls();
 
     return this._setInstance(() => {
       const html= this._stringifyToHtml( indentation );
-      console.log('~~~~~~~~~~~~~~~~~~~~~~');
-      console.log( html );
+      this._debug(() => console.log('~~~~~~~~~~~~~~~~~~~~~~\n', html ) );
 
       return html;
     });

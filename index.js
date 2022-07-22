@@ -14,7 +14,7 @@ let temmlLoadFailed= false;
 let HighlightJs= null;
 let highlightJsLoadFailed= false;
 
-async function getCompiler() {
+async function getCompiler(options= {}) {
   // Try to load temml lib once
   if( !Temml && !temmlLoadFailed ) {
     try {
@@ -36,8 +36,6 @@ async function getCompiler() {
     }
   }
 
-  const options= {};
-
   if( HighlightJs ) {
     options.highlightingFunction= (txt, language) => HighlightJs.highlight(txt, {language, ignoreIllegals: true}).value;
     options.codeElementCSSClasses= ['hljs'];
@@ -57,9 +55,9 @@ async function getCompiler() {
   return k;
 }
 
-async function compileMarkdown( markdownText ) {
+async function compileMarkdown( markdownText, options ) {
   const startTime= performance.now();
-  const comp= await getCompiler();
+  const comp= await getCompiler( options );
 
   const initTime= performance.now();
   const html= await comp.compile( markdownText, true );
