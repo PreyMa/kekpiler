@@ -547,6 +547,16 @@ class HtmlBuilder {
   descendantWithTagname( name ) {
     abstractMethod();
   }
+
+  // Wrap this builder instance with a decorator proxy object
+  decorate( klass ) {
+    return new klass( this );
+  }
+
+  // Check whether the element is of class type
+  is( klass ) {
+    return this instanceof klass;
+  }
 }
 
 /**
@@ -748,19 +758,6 @@ class HtmlTextBuilder extends HtmlBuilder {
 }
 
 /**
-* Html Pre Text Builder class
-* Virtual DOM representation of text node content that needs to be serialized without
-* any kind of pretty printing as whitespace is significant.
-**/
-class HtmlPreTextBuilder extends HtmlTextBuilder {
-  toHtmlString( p ) {
-    p.printNoBlock(() => {
-      super.toHtmlString( p );
-    });
-  }
-}
-
-/**
 * Opaque Html Builder
 * Virtual DOM representation of an opaque block of html code. Its text content and
 * child nodes are just textual html code instead the of a tree of html builder nodes.
@@ -789,6 +786,53 @@ class OpaqueHtmlBuilder extends HtmlBuilder {
 
   print( p ) {
     p.print( `<${this.name}>` );
+  }
+}
+
+/**
+* Html Builder Decorator class
+* This is the base class for html builder decorators changing the behaviour of
+* a provided builder instance. By deafault all mehtod calls are transparently
+* passed through.
+**/
+class HtmlBuilderDecorator {
+  constructor( elem ) {
+    this.element= elem;
+  }
+
+  toHtmlString(...args) {
+    return this.element.toHtmlString(...args);
+  }
+
+  print(...args) {
+    return this.element.print(...args);
+  }
+
+  descendantWithTagname(...args) {
+    return this.element.descendantWithTagname(...args);
+  }
+
+  is(...args) {
+    return this.element.is(...args);
+  }
+
+  wrappedElement() {
+    if( this.element instanceof HtmlBuilderDecorator ) {
+      return this.element.wrappedElement();
+    }
+
+    return this.element;
+  }
+}
+
+/**
+* Html Builder Pre Whitespace Decorator class
+* Makes the element to stringify itself wihtout adding any whitespace, even
+* during pretty printing.
+**/
+class HtmlBuilderPreWhitespace extends HtmlBuilderDecorator {
+  toHtmlString( p ) {
+    p.printNoBlock(() => super.toHtmlString( p ) );
   }
 }
 
@@ -1605,9 +1649,11 @@ class Code extends TextToken {
   }
 
   render() {
-    return new HtmlElementBuilder('pre',
+    return (new HtmlElementBuilder('pre',
               new HtmlElementBuilder('code',
-                new HtmlPreTextBuilder(this.text)));
+                new HtmlTextBuilder( this.text )
+              )
+            )).decorate( HtmlBuilderPreWhitespace );
   }
 }
 Code._tokenType= TokenType.Code;
@@ -2526,7 +2572,9 @@ export {
   Enum,
   Extension,
   HtmlBuilder,
+  HtmlBuilderDecorator,
   HtmlBuilderNodeList,
+  HtmlBuilderPreWhitespace,
   HtmlElementBuilder,
   HtmlSingleElementBuilder,
   HtmlTextBuilder,
