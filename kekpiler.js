@@ -521,9 +521,9 @@ class PositionalMessage {
 * error was created.
 **/
 class CompilationError extends PositionalMessage {
-  constructor(token, message) {
+  constructor(token, message, error= null) {
     super(token, MessageSeverity.Error, message);
-    this.trace= Error('Compiling error stack trace');
+    this.trace= error instanceof Error ? error : Error('Compiling error stack trace');
   }
 }
 
@@ -2389,9 +2389,9 @@ class Kekpiler {
     this._setReferenceRequestsToDefaultValue();
   }
 
-  addMessage( severity, token, text ) {
+  addMessage( severity, token, text, error= null) {
     const msg= (severity === MessageSeverity.Error) ?
-      new CompilationError( token, text ) :
+      new CompilationError( token, text, error ) :
       new PositionalMessage( token, severity, text );
 
     this.messages.push( msg );

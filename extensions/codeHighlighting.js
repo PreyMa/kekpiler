@@ -210,9 +210,7 @@ function injectClassesImpl() {
           this.highlightedHtml= this.options.highlightingFunction( this.text, this.lang );
         } catch( e ) {
           this.highlightedHtml= this.text;
-          // TODO: Print error to log
-          // kek.
-          console.error( e );
+          kek.addMessage(this.options.highlightingFailureMessageLevel, this, 'Could not run highlighting function', e);
         }
       }
 
@@ -282,7 +280,8 @@ export class CodeHighlightExtension extends Kek.Extension {
       highlightingFunction: (txt, lang) => txt,
       showLineNumbers: true,
       lineNumberOffset: 0,
-      codeElementCSSClasses: ['mdkekcode']
+      codeElementCSSClasses: ['mdkekcode'],
+      highlightingFailureMessageLevel: Kek.MessageSeverity.Warning
     });
     return 'CodeHighlight';
   }
