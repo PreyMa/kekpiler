@@ -373,19 +373,23 @@ class Printer {
     this.buffer+= text+ brk;
   }
 
+  // Push a new block level -> Adds an indentation level for indent printers
   push() {
     return this;
   }
 
+  // Pop an active block level -> Removes an indentation level for indent printers
   pop() {
     return this;
   }
 
+  // Print a line of values joined with space characters
   print( ...vals ) {
     this._appendLine( vals.join(' ') );
     return this;
   }
 
+  // Automatically push a block level on entering the lombda and pop it when leaving
   printBlock( fn ) {
     this.push();
     fn();
@@ -393,11 +397,14 @@ class Printer {
     return this;
   }
 
+  // Disable any addiotn of whitespace like new lines and block level indentation
+  // for the duration of the lambda. Works with recursive calls
   printNoBlock( fn ) {
     fn();
     return this;
   }
 
+  // Return the accumulated string data
   string() {
     return this.buffer;
   }
@@ -1108,6 +1115,12 @@ const TokenType= {
 };
 Enum.initPlainObject( TokenType );
 
+/**
+* Token class
+* Base class for all tokens used to represent the markdown source code as tree
+* of token nodes. Nodes are created by the Tokenizer using regular expressions,
+* they can then recursively tokenize their text content.
+**/
 class Token {
   /** @param{number|Token} sourceIndex **/
   constructor( sourceIndex ) {
@@ -1224,6 +1237,11 @@ class Token {
   }
 }
 
+/**
+* Division Token class
+* These tokens are not rendered and are used to indicate section break, like paragraphs
+* or line breaks in table rows.
+**/
 class DivisionToken extends Token {
   render() {}
   isInlineToken() {
@@ -1232,6 +1250,11 @@ class DivisionToken extends Token {
 }
 DivisionToken._tokenType= TokenType.DivisionToken;
 
+/**
+* Parent Token class
+* This is the base class for all tokens acting as tree nodes containing tokens as
+* children. Handles the recursive tokenization and rendering.
+**/
 class ParentToken extends Token {
   constructor( idx ) {
     super( idx );
@@ -1333,6 +1356,11 @@ class ParentToken extends Token {
   }
 }
 
+/**
+* Paragraph class
+* Token for paragraphs of text. During parsing a paragraph can consume and gut
+* following paragraphs until a non-inline-token is reached like a division token.
+**/
 class Paragraph extends ParentToken {
   constructor( idx, text ) {
     super( idx );
