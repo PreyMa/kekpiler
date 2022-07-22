@@ -2606,6 +2606,7 @@ export {
   escapeHtml,
   ArrayIterator,
   CompilationError,
+  CompoundRegularExpression,
   ConsolePrinter,
   Enum,
   Extension,

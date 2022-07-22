@@ -1,8 +1,12 @@
 import * as Kek from '../kekpiler.js';
 
+const defaultTabSapceCount= 2;
 const splitLinesRegex= /\r?\n/gm;
 const trailingWhitespaceRegex= /(?<=\S|^)[^\S\n\r]+(?=\n)/gm;
-const defaultTabSapceCount= 2;
+const markdownOptionsRegex= new Kek.CompoundRegularExpression(
+  /(?<attr>\w+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w+)))?|/gm,
+  /(?<err>\S+)/
+);
 
 function charIsWhitespace( c ) {
   return ' \n\t\r\f\v\u00a0\u1680\u2000\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'.indexOf(c) >= 0;
@@ -77,12 +81,64 @@ function injectClassesImpl() {
       constructor(...args) {
         super(...args);
 
+        this.markdownOptions= {};
         this.highlightedHtml= null;
         this.options= null;
+
+        this._parseMarkdownOptions();
       }
 
       setOptions( opt ) {
         this.options= opt;
+      }
+
+      _parseMarkdownOptions() {
+        if( !this.lang ) {
+          return;
+        }
+
+        const regex= markdownOptionsRegex.copy();
+
+        let match, language= null;
+        while((match= regex.exec( this.lang )) !== null) {
+          const groups= match.groups;
+          if( groups.err ) {
+            Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Unexpected characers '${groups.err}' in code block options`);
+            continue;
+          }
+
+          const attributeName= groups.attr;
+          Kek.assert( attributeName, 'Expected to match an attribute name for markdown options' );
+          if( groups.val1 ) {
+            this._setMarkdownOption(attributeName, groups.val1);
+
+          } else if( groups.val2 ) {
+            this._setMarkdownOption(attributeName, groups.val2);
+
+          } else {
+            if( language === null ) {
+              language= attributeName;
+              continue;
+            }
+
+            this._setMarkdownOption(attributeName, true);
+          }
+        }
+
+        this.lang= language;
+
+        if( this.markdownOptions.offset ) {
+          this.markdownOptions.offset= parseInt(this.markdownOptions.offset) || 0;
+        }
+      }
+
+      _setMarkdownOption( name, value ) {
+        if( this.markdownOptions.hasOwnProperty(name) ) {
+          Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
+          return;
+        }
+
+        this.markdownOptions[name]= typeof value === 'string' ? value.replaceAll('\\"', '"') : value;
       }
 
       _trimWhitespaceIfEnabled() {
@@ -239,7 +295,7 @@ function injectClassesImpl() {
           codeElem.addCssClass('mdkekcode-linenumbers');
 
           // Make more space if the line numbers have three digits (or two and a minus sign)
-          const offset= this.options.lineNumberOffset+ 1;
+          const offset= this.options.lineNumberOffset+ (this.markdownOptions.offset || 0)+ 1;
           if( lineElements.length+ offset >= 100 || lineElements.length+ offset <= -10 ) {
             lineContainer.addCssClass('mdkekcode-manylines');
             codeElem.addCssClass('mdkekcode-manylines');
@@ -289,7 +345,8 @@ export class CodeHighlightExtension extends Kek.Extension {
       lineNumberOffset: 0,
       showHighlightedLanguage: true,
       codeElementCSSClasses: ['mdkekcode'],
-      highlightingFailureMessageLevel: Kek.MessageSeverity.Warning
+      highlightingFailureMessageLevel: Kek.MessageSeverity.Warning,
+      badMarkdownOptionsMessageLevel: Kek.MessageSeverity.Warning
     });
     return 'CodeHighlight';
   }
