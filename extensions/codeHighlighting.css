@@ -36,3 +36,20 @@ figure.code code.mdkekcode-linenumbers {
 figure.code code.mdkekcode-linenumbers.mdkekcode-manylines {
   padding-left: 4em;
 }
+
+figure.code pre div.mdkekcode-langname {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  background-color: grey;
+  border-radius: 5px;
+  padding: 2px 1em;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.2s ease-in-out;
+}
+
+figure.code pre:hover div.mdkekcode-langname {
+  visibility: visible;
+  opacity: 1;
+}

@@ -217,8 +217,15 @@ function injectClassesImpl() {
       _renderContent( preElem, codeElem ) {
         codeElem.clearChildren();
 
+        // Add language name tag to the code block
+        if( this.options.showHighlightedLanguage ) {
+          const langElem= new Kek.HtmlElementBuilder('div', new Kek.HtmlTextBuilder(this.lang) );
+          langElem.addCssClass('mdkekcode-langname');
+          preElem.appendChild( langElem );
+        }
+
         const opaqueElem= new HtmlHighlightedCodeBlockBuilder( this.highlightedHtml );
-        if( !this.options.showLineNumbers/*&& !this.options.emphasizeLines && !this.options.showLanguage */) {
+        if( !this.options.showLineNumbers/*&& !this.options.emphasizeLines*/) {
           return codeElem.appendChild( opaqueElem );
         }
 
@@ -280,6 +287,7 @@ export class CodeHighlightExtension extends Kek.Extension {
       highlightingFunction: (txt, lang) => txt,
       showLineNumbers: true,
       lineNumberOffset: 0,
+      showHighlightedLanguage: true,
       codeElementCSSClasses: ['mdkekcode'],
       highlightingFailureMessageLevel: Kek.MessageSeverity.Warning
     });
