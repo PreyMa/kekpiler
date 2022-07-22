@@ -8,15 +8,64 @@ function charIsWhitespace( c ) {
   return ' \n\t\r\f\v\u00a0\u1680\u2000\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'.indexOf(c) >= 0;
 }
 
+/**
+* Html Highlighted Code Block Builder class
+* If no line numbers or line markers are set the highlighted code consisting of
+* spans and text are stored as an opaque block of html code.
+**/
 class HtmlHighlightedCodeBlockBuilder extends Kek.OpaqueHtmlBuilder {
   constructor( html ) {
-    super(html, 'highlighted-code', true)
+    super(html, 'highlighted-code-block', true)
+  }
+
+  toLineElements() {
+    const lines= this.html.split('\n');
+    if( lines.length && !lines[lines.length-1].trim().length ) {
+      lines.pop();
+    }
+
+    return lines.map( line =>
+      new HtmlHighlightedCodeLineBuilder(
+        new HtmlHighlightedCodeLineContentBuilder( line )
+      )
+    );
   }
 }
 
-class HtmlHighlightedCodeLineBuilder extends Kek.OpaqueHtmlBuilder {
+/**
+* Html Highlighted Code Line Content Builder class
+* A single line of highlighted code as opaque html.
+**/
+class HtmlHighlightedCodeLineContentBuilder extends Kek.OpaqueHtmlBuilder {
   constructor( html ) {
-    super(html, 'highlighted-code', true)
+    super(html, 'highlighted-code-line', true)
+  }
+}
+
+/**
+* Html Highlighted Code Line Builder class
+* This class wraps the opaque html builder node of highlighted code line. It is a
+* node list that can store other elements along side the highlighted code, but is
+* not a tag based html element itself. It allows for prepending and appending other
+* nodes to the highlighted code and automatically adds the new line character at the
+* end when stringifying.
+**/
+class HtmlHighlightedCodeLineBuilder extends Kek.HtmlBuilderNodeList( Kek.HtmlBuilder ) {
+  constructor( ...children ) {
+    super();
+    this.children= children;
+  }
+
+  toHtmlString( p ) {
+    p.printNoBlock(() => {
+      super.toHtmlString( p );
+      p.print('\n');
+    });
+  }
+
+  print( p ) {
+    p.print('{Line}');
+    p.printBlock(() => super.print(p) );
   }
 }
 
@@ -161,10 +210,44 @@ function injectClassesImpl() {
           this.highlightedHtml= this.options.highlightingFunction( this.text, this.lang );
         } catch( e ) {
           this.highlightedHtml= this.text;
+          // TODO: Print error to log
+          // kek.
           console.error( e );
         }
+      }
 
-        console.log( this.highlightedHtml );
+      _renderContent( preElem, codeElem ) {
+        codeElem.clearChildren();
+
+        const opaqueElem= new HtmlHighlightedCodeBlockBuilder( this.highlightedHtml );
+        if( !this.options.showLineNumbers/*&& !this.options.emphasizeLines && !this.options.showLanguage */) {
+          return codeElem.appendChild( opaqueElem );
+        }
+
+        const lineElements= opaqueElem.toLineElements();
+        codeElem.appendChild( lineElements );
+
+        // Add line numbers after the <code> element
+        if( this.options.showLineNumbers ) {
+          const lineContainer= new Kek.HtmlElementBuilder('div');
+          lineContainer.addCssClass('mdkekcode-linenumbers');
+          codeElem.addCssClass('mdkekcode-linenumbers');
+
+          // Make more space if the line numbers have three digits (or two and a minus sign)
+          const offset= this.options.lineNumberOffset+ 1;
+          if( lineElements.length+ offset >= 100 || lineElements.length+ offset <= -10 ) {
+            lineContainer.addCssClass('mdkekcode-manylines');
+            codeElem.addCssClass('mdkekcode-manylines');
+          }
+
+          for( let i= 0; i!== lineElements.length; i++ ) {
+            const lineNum= i+ offset;
+            const lineTag= new HtmlHighlightedCodeLineBuilder( new Kek.HtmlElementBuilder('span', new Kek.HtmlTextBuilder(''+ lineNum) ) );
+            lineContainer.appendChild( lineTag );
+          }
+
+          preElem.appendChild( lineContainer );
+        }
       }
 
       render() {
@@ -174,14 +257,13 @@ function injectClassesImpl() {
 
         this.text= text;
 
-        const opaqueElem= new HtmlHighlightedCodeBlockBuilder( this.highlightedHtml );
+        const preElem= elem.descendantWithTagname('pre');
+        Kek.assert( preElem instanceof Kek.HtmlElementBuilder, 'Could not query <pre> element in virtual dom' );
 
-        const codeElem= elem.descendantWithTagname('code');
-        Kek.assert( codeElem, 'Could not query code element in virtual dom' );
+        const codeElem= preElem.descendantWithTagname('code');
+        Kek.assert( codeElem instanceof Kek.HtmlElementBuilder, 'Could not query <code> element in virtual dom' );
 
-        codeElem.clearChildren();
-        codeElem.appendChild( opaqueElem );
-
+        this._renderContent( preElem, codeElem );
         this.options.codeElementCSSClasses.forEach( c => codeElem.addCssClass(c) );
 
         return elem;
@@ -200,7 +282,7 @@ export class CodeHighlightExtension extends Kek.Extension {
       highlightingFunction: (txt, lang) => txt,
       showLineNumbers: true,
       lineNumberOffset: 0,
-      codeElementCSSClasses: []
+      codeElementCSSClasses: ['mdkekcode']
     });
     return 'CodeHighlight';
   }

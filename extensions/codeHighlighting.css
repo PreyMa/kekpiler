@@ -1,0 +1,38 @@
+/**
+* Add this file after any highlighting theme from hljs/prism if you want to use
+* any added html content like line numbers, language name or line markers.
+**/
+
+figure.code pre {
+  position: relative;
+}
+
+figure.code pre div.mdkekcode-linenumbers {
+  pointer-events: none;
+  user-select: none;
+  position: absolute;
+  top: 1em;
+  left: 0;
+  text-align: right;
+  width: 2.5em;
+}
+
+figure.code pre div.mdkekcode-linenumbers.mdkekcode-manylines {
+  width: 4em;
+}
+
+figure.code pre div.mdkekcode-linenumbers > span {
+  padding-right: 5px;
+  margin-right: 5px;
+  border-right: 1px solid grey;
+  color: grey;
+}
+
+figure.code code.mdkekcode-linenumbers {
+  padding-left: 2.5em;
+  display: block;
+}
+
+figure.code code.mdkekcode-linenumbers.mdkekcode-manylines {
+  padding-left: 4em;
+}
