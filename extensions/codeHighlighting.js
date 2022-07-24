@@ -352,26 +352,59 @@ function injectClassesImpl() {
 
         // Add line markers
         if( showLineMarkers ) {
-          this.markdownOptions.marker.forEach( lineIdx => {
-            lineIdx--;
+          const markers= this.markdownOptions.marker.sort((a, b) => a- b);
+          for( let i= 0; i < markers.length; i++ ) {
+            // Skip invalid indices
+            const lineIdx= markers[i]- 1;
             if( lineIdx < 0 || lineIdx >= lineElements.length ) {
-              return;
+              continue;
             }
 
             // Skip lines alrady wrapped
             const line= lineElements[lineIdx];
-            if( !line.is(HtmlHighlightedCodeLineBuilder) ) {
-              return;
+            const prevLineIdx= i ? markers[i-1] -1 : null;
+            if( prevLineIdx === line || !line.is(HtmlHighlightedCodeLineBuilder) ) {
+              continue;
+            }
+
+            // Find next index by skipping repetitions
+            let nextLineIdx= lineIdx;
+            while( i < markers.length-1 && nextLineIdx === lineIdx ) {
+              nextLineIdx= markers[++i]- 1;
+            }
+            i--;
+
+            // Select fitting css class -> eg. # is a marked line
+            // 1: # .marked-first <- block of marked lines
+            // 2: # .marked
+            // 3: # .marked
+            // 4: # .marked-last
+            // 5:
+            // 6: # .marked-first-last <- single marked line
+            // 7:
+            // 8: # .marked-first-last
+            const isFirstLine= prevLineIdx === null || prevLineIdx !== lineIdx-1;
+            const isLastLine= lineIdx === nextLineIdx || nextLineIdx- lineIdx > 1;
+
+            let cssClassName;
+            if( isFirstLine && isLastLine ) {
+              cssClassName= 'mdkekcode-marked-first-last';
+            } else if( isFirstLine ) {
+              cssClassName= 'mdkekcode-marked-first';
+            } else if( isLastLine ) {
+              cssClassName= 'mdkekcode-marked-last';
+            } else {
+              cssClassName= 'mdkekcode-marked';
             }
 
             const wrappedLine= new Kek.HtmlElementBuilder('span', line);
-            wrappedLine.addCssClass('mdkekcode-marked');
+            wrappedLine.addCssClass( cssClassName );
             lineElements[lineIdx]= wrappedLine;
 
             if( lineNumberContainer ) {
-              lineNumberContainer.childNode( lineIdx ).addCssClass('mdkekcode-marked');
+              lineNumberContainer.childNode( lineIdx ).addCssClass( cssClassName );
             }
-          });
+          }
         }
 
         codeElem.appendChild( lineElements );

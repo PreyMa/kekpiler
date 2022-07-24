@@ -56,8 +56,31 @@ figure.code pre:hover div.mdkekcode-langname {
   opacity: 1;
 }
 
-figure.code pre span.mdkekcode-marked {
+figure.code pre span.mdkekcode-marked,
+figure.code pre span.mdkekcode-marked-first,
+figure.code pre span.mdkekcode-marked-last,
+  figure.code pre span.mdkekcode-marked-first-last {
   background-color: #ffffff1a;
   min-width: max-content;
   display: block;
+}
+
+figure.code pre code span.mdkekcode-marked-first,
+figure.code pre code span.mdkekcode-marked-first-last {
+  border-top-right-radius: 5px;
+}
+
+figure.code pre div.mdkekcode-linenumbers span.mdkekcode-marked-first,
+figure.code pre div.mdkekcode-linenumbers span.mdkekcode-marked-first-last {
+  border-top-left-radius: 5px;
+}
+
+figure.code pre code span.mdkekcode-marked-last,
+figure.code pre code span.mdkekcode-marked-first-last {
+  border-bottom-right-radius: 5px;
+}
+
+figure.code pre div.mdkekcode-linenumbers span.mdkekcode-marked-last,
+figure.code pre div.mdkekcode-linenumbers span.mdkekcode-marked-first-last {
+  border-bottom-left-radius: 5px;
 }
