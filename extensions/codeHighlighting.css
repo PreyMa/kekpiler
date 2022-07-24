@@ -15,13 +15,15 @@ figure.code pre div.mdkekcode-linenumbers {
   left: 0;
   text-align: right;
   width: 2.5em;
+  padding-left: 1em;
+  background-color: #282c34;
 }
 
 figure.code pre div.mdkekcode-linenumbers.mdkekcode-manylines {
   width: 4em;
 }
 
-figure.code pre div.mdkekcode-linenumbers > span {
+figure.code pre div.mdkekcode-linenumbers > span > span {
   padding-right: 5px;
   margin-right: 5px;
   border-right: 1px solid grey;
@@ -29,12 +31,12 @@ figure.code pre div.mdkekcode-linenumbers > span {
 }
 
 figure.code code.mdkekcode-linenumbers {
-  padding-left: 2.5em;
+  padding-left: 3.5em;
   display: block;
 }
 
 figure.code code.mdkekcode-linenumbers.mdkekcode-manylines {
-  padding-left: 4em;
+  padding-left: 5em;
 }
 
 figure.code pre div.mdkekcode-langname {
@@ -52,4 +54,10 @@ figure.code pre div.mdkekcode-langname {
 figure.code pre:hover div.mdkekcode-langname {
   visibility: visible;
   opacity: 1;
+}
+
+figure.code pre span.mdkekcode-marked {
+  background-color: #ffffff1a;
+  min-width: max-content;
+  display: block;
 }

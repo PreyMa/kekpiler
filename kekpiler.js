@@ -680,6 +680,10 @@ const HtmlBuilderNodeList= Mixin( klass => {
       return children;
     }
 
+    childNode( idx ) {
+      return this.children[idx];
+    }
+
     toHtmlString( p ) {
       this.children.forEach( c => c.toHtmlString( p ) );
     }

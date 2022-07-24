@@ -7,6 +7,9 @@ const markdownOptionsRegex= new Kek.CompoundRegularExpression(
   /(?<attr>\w+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w+)))?|/gm,
   /(?<err>\S+)/
 );
+const lineMarkerRegex= new Kek.CompoundRegularExpression(
+  /((?<start>\d+)(\s*-\s*(?<end>\d+))?)|(?<err>\S+)/gm
+);
 
 function charIsWhitespace( c ) {
   return ' \n\t\r\f\v\u00a0\u1680\u2000\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'.indexOf(c) >= 0;
@@ -130,6 +133,8 @@ function injectClassesImpl() {
         if( this.markdownOptions.offset ) {
           this.markdownOptions.offset= parseInt(this.markdownOptions.offset) || 0;
         }
+
+        this._parseLineMarkers();
       }
 
       _setMarkdownOption( name, value ) {
@@ -139,6 +144,33 @@ function injectClassesImpl() {
         }
 
         this.markdownOptions[name]= typeof value === 'string' ? value.replaceAll('\\"', '"') : value;
+      }
+
+      _parseLineMarkers() {
+        const markerText= this.markdownOptions.marker;
+        if( !markerText ) {
+          return;
+        }
+
+        const markers= [];
+        const regex= lineMarkerRegex.copy();
+        let match;
+        while((match= regex.exec(markerText)) !== null) {
+          const groups= match.groups;
+          if( groups.err ) {
+            Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
+            continue;
+          }
+
+          const start= parseInt( groups.start );
+          const end= groups.end ? parseInt( groups.end ) : start;
+
+          for( let i= start; i<= end; i++ ) {
+            markers.push(i);
+          }
+        }
+
+        this.markdownOptions.marker= markers;
       }
 
       _trimWhitespaceIfEnabled() {
@@ -280,35 +312,69 @@ function injectClassesImpl() {
           preElem.appendChild( langElem );
         }
 
+        // Check if conversion to line elements is necessary -> just return the html blob else
         const opaqueElem= new HtmlHighlightedCodeBlockBuilder( this.highlightedHtml );
-        if( !this.options.showLineNumbers/*&& !this.options.emphasizeLines*/) {
+        const showLineMarkers= this.options.showLineMarkers && Array.isArray(this.markdownOptions.marker);
+        if( !this.options.showLineNumbers && !showLineMarkers ) {
           return codeElem.appendChild( opaqueElem );
         }
 
         const lineElements= opaqueElem.toLineElements();
-        codeElem.appendChild( lineElements );
 
         // Add line numbers after the <code> element
+        let lineNumberContainer= null;
         if( this.options.showLineNumbers ) {
-          const lineContainer= new Kek.HtmlElementBuilder('div');
-          lineContainer.addCssClass('mdkekcode-linenumbers');
+          lineNumberContainer= new Kek.HtmlElementBuilder('div');
+          lineNumberContainer.addCssClass('mdkekcode-linenumbers');
           codeElem.addCssClass('mdkekcode-linenumbers');
 
           // Make more space if the line numbers have three digits (or two and a minus sign)
           const offset= this.options.lineNumberOffset+ (this.markdownOptions.offset || 0)+ 1;
           if( lineElements.length+ offset >= 100 || lineElements.length+ offset <= -10 ) {
-            lineContainer.addCssClass('mdkekcode-manylines');
+            lineNumberContainer.addCssClass('mdkekcode-manylines');
             codeElem.addCssClass('mdkekcode-manylines');
           }
 
           for( let i= 0; i!== lineElements.length; i++ ) {
             const lineNum= i+ offset;
-            const lineTag= new HtmlHighlightedCodeLineBuilder( new Kek.HtmlElementBuilder('span', new Kek.HtmlTextBuilder(''+ lineNum) ) );
-            lineContainer.appendChild( lineTag );
+            const lineTag= new Kek.HtmlElementBuilder('span',
+              new Kek.HtmlElementBuilder('span',
+                new HtmlHighlightedCodeLineBuilder(
+                  new Kek.HtmlTextBuilder(''+ lineNum)
+                )
+              )
+            );
+            lineNumberContainer.appendChild( lineTag );
           }
 
-          preElem.appendChild( lineContainer );
+          preElem.appendChild( lineNumberContainer );
         }
+
+        // Add line markers
+        if( showLineMarkers ) {
+          this.markdownOptions.marker.forEach( lineIdx => {
+            lineIdx--;
+            if( lineIdx < 0 || lineIdx >= lineElements.length ) {
+              return;
+            }
+
+            // Skip lines alrady wrapped
+            const line= lineElements[lineIdx];
+            if( !line.is(HtmlHighlightedCodeLineBuilder) ) {
+              return;
+            }
+
+            const wrappedLine= new Kek.HtmlElementBuilder('span', line);
+            wrappedLine.addCssClass('mdkekcode-marked');
+            lineElements[lineIdx]= wrappedLine;
+
+            if( lineNumberContainer ) {
+              lineNumberContainer.childNode( lineIdx ).addCssClass('mdkekcode-marked');
+            }
+          });
+        }
+
+        codeElem.appendChild( lineElements );
       }
 
       render() {
@@ -342,6 +408,7 @@ export class CodeHighlightExtension extends Kek.Extension {
       removeIndent: true,
       highlightingFunction: (txt, lang) => txt,
       showLineNumbers: true,
+      showLineMarkers: true,
       lineNumberOffset: 0,
       showHighlightedLanguage: true,
       codeElementCSSClasses: ['mdkekcode'],
