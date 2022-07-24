@@ -4,7 +4,7 @@ const defaultTabSapceCount= 2;
 const splitLinesRegex= /\r?\n/gm;
 const trailingWhitespaceRegex= /(?<=\S|^)[^\S\n\r]+(?=\n)/gm;
 const markdownOptionsRegex= new Kek.CompoundRegularExpression(
-  /(?<attr>\w+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w+)))?|/gm,
+  /(?<attr>\w\S+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w\S+)))?|/gm,
   /(?<err>\S+)/
 );
 const lineMarkerRegex= new Kek.CompoundRegularExpression(
@@ -106,7 +106,8 @@ function injectClassesImpl() {
         while((match= regex.exec( this.lang )) !== null) {
           const groups= match.groups;
           if( groups.err ) {
-            Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Unexpected characers '${groups.err}' in code block options`);
+            const kek= Kek.KekpilerImpl.the();
+            kek.addMessage(kek.config().badMarkdownOptionsMessageLevel, this, `Unexpected characers '${groups.err}' in code block options`);
             continue;
           }
 
@@ -128,7 +129,7 @@ function injectClassesImpl() {
           }
         }
 
-        this.lang= language;
+        this.lang= language ? language.toLowerCase() : language;
 
         if( this.markdownOptions.offset ) {
           this.markdownOptions.offset= parseInt(this.markdownOptions.offset) || 0;
