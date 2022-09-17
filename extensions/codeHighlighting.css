@@ -5,6 +5,7 @@
 
 figure.code pre {
   position: relative;
+  line-height: 1em;
 }
 
 figure.code pre div.mdkekcode-linenumbers {
