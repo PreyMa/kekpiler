@@ -8,36 +8,9 @@ import {LineBreakExtension} from './extensions/lineBreak.js';
 import {TemmlMathExtension} from './extensions/temmlMath.js';
 import {FigureExtension} from './extensions/figure.js';
 
-let Temml= null;
-let temmlLoadFailed= false;
-
-let HighlightJs= null;
-let highlightJsLoadFailed= false;
-
 async function getCompiler(options= {}) {
-  // Try to load temml lib once
-  if( !Temml && !temmlLoadFailed ) {
-    try {
-      Temml= (await import('./dependency/temml.cjs')).default;
-    } catch( e ) {
-      temmlLoadFailed= true;
-      console.error( e );
-      throw e;
-    }
-  }
-
-  if( !HighlightJs && !highlightJsLoadFailed ) {
-    try {
-      HighlightJs= (await import('./dependency/node_modules/highlight.js/es/index.js')).default;
-    } catch( e ) {
-      highlightJsLoadFailed= true;
-      console.error( e );
-      throw e;
-    }
-  }
-
-  if( HighlightJs ) {
-    options.highlightingFunction= (txt, language) => HighlightJs.highlight(txt, {language, ignoreIllegals: true}).value;
+  if( options.HighlightJs ) {
+    options.highlightingFunction= (txt, language) => options.HighlightJs.highlight(txt, {language, ignoreIllegals: true}).value;
     options.codeElementCSSClasses= ['hljs'];
   }
 
@@ -48,8 +21,8 @@ async function getCompiler(options= {}) {
   k.use( new FigureExtension() );
   k.use( new CodeHighlightExtension() );
 
-  if( Temml ) {
-    k.use( new TemmlMathExtension(Temml) )
+  if( options.Temml ) {
+    k.use( new TemmlMathExtension(options.Temml) )
   }
 
   return k;
