@@ -26,6 +26,8 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
 
       return this;
     }
+
+    return this;
   }
 
   renderContent() {
