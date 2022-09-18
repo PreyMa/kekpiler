@@ -370,6 +370,29 @@ class ArrayIterator {
 }
 
 /**
+* Token Iterator class
+* Adds some convenience methods specific to traversing lists of tokens
+**/
+class TokenIterator extends ArrayIterator {
+  consumeFirstNonDivisionTokenIf( fn ) {
+    for( let i= 1; i!== this.remainingItems(); i++ ) {
+      // Jump over all division tokens
+      const token= this.peek( i );
+      if( token.is(TokenType.SoftDivision) || token.is(TokenType.HardDivision) ) {
+        continue;
+      }
+
+      // Advance the iterator if the token is consumed
+      if( fn( token ) ) {
+        this.next( i );
+      }
+
+      return;
+    }
+  }
+}
+
+/**
 * Printer class
 * Base class for text printers supporting automatic block indentation. This base
 * class ignores indentation commandy and creates "minified" output.

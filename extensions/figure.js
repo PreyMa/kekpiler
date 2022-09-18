@@ -12,20 +12,12 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
   }
 
   consumeNeighbours( it ) {
-    // Jump over all division tokens and check if there is a caption
-    for( let i= 1; i!== it.remainingItems(); i++ ) {
-      const token= it.peek( i );
-      if( token.is(Kek.Token.TokenType.SoftDivision) || token.is(Kek.Token.TokenType.HardDivision) ) {
-        continue;
-      }
-
+    it.consumeFirstNonDivisionTokenIf( token => {
       if( token.is(Kek.Token.TokenType.CustomBlock) && token instanceof Caption ) {
-        const caption= it.next( i );
-        this.captionTextContent= caption.resourceName() || caption.referenceName();
+        this.captionTextContent= token.resourceName() || token.referenceName();
+        return true;
       }
-
-      return this;
-    }
+    });
 
     return this;
   }
