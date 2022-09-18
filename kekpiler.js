@@ -1125,6 +1125,7 @@ const TokenType= {
   Code: 0,
   ContainerBox: 0,
   CustomBlock: 0,
+  CustomMetaBlock: 0,
   DivisionToken: 0,
   Document: 0,
   EnumerationItem: 0,
@@ -2098,6 +2099,18 @@ class CustomBlock extends ResourceToken(Token) {
 }
 CustomBlock._tokenType= TokenType.CustomBlock;
 
+class CustomMetaBlock extends CustomBlock {
+  resourceType() {
+    return 'none';
+  }
+
+  print( p ) {
+    p.print( this.name(), `@${this.sourceIndex} "${this.referenceName()}"`);
+  }
+
+  render() { /* NOP */ }
+}
+CustomMetaBlock._tokenType= TokenType.CustomMetaBlock;
 
 class Reference extends Token {
   constructor( idx, text ) {
@@ -2599,6 +2612,7 @@ const TokenExports= {
   Code,
   ContainerBox,
   CustomBlock,
+  CustomMetaBlock,
   DivisionToken,
   Document,
   EnumerationItem,

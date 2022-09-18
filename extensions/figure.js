@@ -13,7 +13,7 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
 
   consumeNeighbours( it ) {
     it.consumeFirstNonDivisionTokenIf( token => {
-      if( token.is(Kek.Token.TokenType.CustomBlock) && token instanceof Caption ) {
+      if( token.is(Kek.Token.TokenType.CustomMetaBlock) && token instanceof Caption ) {
         this.captionTextContent= token.resourceName() || token.referenceName();
         return true;
       }
@@ -46,7 +46,7 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
   }
 });
 
-class Caption extends Kek.Token.CustomBlock.extend() {
+class Caption extends Kek.Token.CustomMetaBlock.extend() {
   constructor(...args) {
     super(...args);
 
@@ -56,12 +56,6 @@ class Caption extends Kek.Token.CustomBlock.extend() {
       kek.addMessage(kek.config().emptyCaptionElementMessageLevel, this, 'Caption without any text content found');
     }
   }
-
-  resourceType() {
-    return 'none';
-  }
-
-  render() { /* NOP */ }
 }
 
 export let ImageFigure;
