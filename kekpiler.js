@@ -375,7 +375,7 @@ class ArrayIterator {
 **/
 class TokenIterator extends ArrayIterator {
   consumeFirstNonDivisionTokenIf( fn ) {
-    for( let i= 1; i!== this.remainingItems(); i++ ) {
+    for( let i= 1; i< this.remainingItems(); i++ ) {
       // Jump over all division tokens
       const token= this.peek( i );
       if( token.is(TokenType.SoftDivision) || token.is(TokenType.HardDivision) ) {
@@ -385,6 +385,11 @@ class TokenIterator extends ArrayIterator {
       // Advance the iterator if the token is consumed
       if( fn( token ) ) {
         this.next( i );
+      }
+
+      // Allow multiple meta blocks to be checked
+      if( token.is(TokenType.CustomMetaBlock) ) {
+        continue;
       }
 
       return;
