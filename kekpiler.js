@@ -357,6 +357,16 @@ class ArrayIterator {
     this.idx+= offset;
     return this.get();
   }
+
+  whileHasNext( fn ) {
+    while( this.hasNext() ) {
+      const value= this.next();
+      const result= fn( value, this );
+      if( result === IterationDecision.Break ) {
+        return;
+      }
+    }
+  }
 }
 
 /**
@@ -1311,22 +1321,19 @@ class ParentToken extends Token {
     const tokenIt= new ArrayIterator( tokens );
 
     const nodes= [];
-    while( tokenIt.hasNext() ) {
-      let node= tokenIt.next();
+    tokenIt.whileHasNext( node => {
       node= node.consumeTokens( tokenIt );
 
       if( node ) {
         nodes.push( node );
       }
-    }
+    });
 
-    const nodeIt= new ArrayIterator( nodes );
-    while( nodeIt.hasNext() ) {
-      let node= nodeIt.next();
+    const nodeIt= new TokenIterator( nodes );
+    nodeIt.whileHasNext( node => {
       node= node.consumeNeighbours( nodeIt );
-
       this.children.push( node );
-    }
+    });
   }
 
   forEach( fn ) {
