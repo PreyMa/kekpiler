@@ -37,7 +37,7 @@ export class Options {
       if( groups.err ) {
         logger.addMessage(`Unexpected characters '${groups.err}' in options`);
         continue;
-      } console.log( match.groups );
+      }
 
       const attributeName= groups.attr;
       assert( attributeName, 'Expected to match an attribute name for options' );
