@@ -86,13 +86,13 @@ function injectClassesImpl() {
 
         this.markdownOptions= {};
         this.highlightedHtml= null;
-        this.options= null;
+        this.extensionConfig= null;
 
         this._parseMarkdownOptions();
       }
 
-      setOptions( opt ) {
-        this.options= opt;
+      setExtensionConfig( opt ) {
+        this.extensionConfig= opt;
       }
 
       _parseMarkdownOptions() {
@@ -140,7 +140,7 @@ function injectClassesImpl() {
 
       _setMarkdownOption( name, value ) {
         if( this.markdownOptions.hasOwnProperty(name) ) {
-          Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
+          Kek.KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
           return;
         }
 
@@ -159,7 +159,7 @@ function injectClassesImpl() {
         while((match= regex.exec(markerText)) !== null) {
           const groups= match.groups;
           if( groups.err ) {
-            Kek.KekpilerImpl.the().addMessage(this.options.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
+            Kek.KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
             continue;
           }
 
@@ -175,7 +175,7 @@ function injectClassesImpl() {
       }
 
       _trimWhitespaceIfEnabled() {
-        if( !this.options.trimWhitespace ) {
+        if( !this.extensionConfig.trimWhitespace ) {
           return;
         }
 
@@ -207,8 +207,8 @@ function injectClassesImpl() {
       }
 
       _normalizeTabsAndSpacesIfEnabled() {
-        const doSpaces= this.options.normalizeTabsToSpaces;
-        const doTabs= this.options.normalizeSpacesToTabs;
+        const doSpaces= this.extensionConfig.normalizeTabsToSpaces;
+        const doTabs= this.extensionConfig.normalizeSpacesToTabs;
 
         // Convert tab characters into spaces
         if( typeof doSpaces !== 'undefined' ) {
@@ -224,7 +224,7 @@ function injectClassesImpl() {
       }
 
       _removeIndentIfEnabled() {
-        if( !this.options.removeIndent ) {
+        if( !this.extensionConfig.removeIndent ) {
           return;
         }
 
@@ -289,17 +289,17 @@ function injectClassesImpl() {
       }
 
       highlightCode( kek ) {
-        Kek.assert( this.options, 'Missing highlighting options');
+        Kek.assert( this.extensionConfig, 'Missing highlighting options');
 
         this._trimWhitespaceIfEnabled();
         this._normalizeTabsAndSpacesIfEnabled();
         this._removeIndentIfEnabled();
 
         try {
-          this.highlightedHtml= this.options.highlightingFunction( this.text, this.lang );
+          this.highlightedHtml= this.extensionConfig.highlightingFunction( this.text, this.lang );
         } catch( e ) {
           this.highlightedHtml= this.text;
-          kek.addMessage(this.options.highlightingFailureMessageLevel, this, 'Could not run highlighting function', e);
+          kek.addMessage(this.extensionConfig.highlightingFailureMessageLevel, this, 'Could not run highlighting function', e);
         }
       }
 
@@ -307,7 +307,7 @@ function injectClassesImpl() {
         codeElem.clearChildren();
 
         // Add language name tag to the code block
-        if( this.options.showHighlightedLanguage ) {
+        if( this.extensionConfig.showHighlightedLanguage ) {
           const langElem= new Kek.HtmlElementBuilder('div', new Kek.HtmlTextBuilder(this.lang) );
           langElem.addCssClass('mdkekcode-langname');
           preElem.appendChild( langElem );
@@ -315,8 +315,8 @@ function injectClassesImpl() {
 
         // Check if conversion to line elements is necessary -> just return the html blob else
         const opaqueElem= new HtmlHighlightedCodeBlockBuilder( this.highlightedHtml );
-        const showLineMarkers= this.options.showLineMarkers && Array.isArray(this.markdownOptions.marker);
-        if( !this.options.showLineNumbers && !showLineMarkers ) {
+        const showLineMarkers= this.extensionConfig.showLineMarkers && Array.isArray(this.markdownOptions.marker);
+        if( !this.extensionConfig.showLineNumbers && !showLineMarkers ) {
           return codeElem.appendChild( opaqueElem );
         }
 
@@ -324,13 +324,13 @@ function injectClassesImpl() {
 
         // Add line numbers after the <code> element
         let lineNumberContainer= null;
-        if( this.options.showLineNumbers ) {
+        if( this.extensionConfig.showLineNumbers ) {
           lineNumberContainer= new Kek.HtmlElementBuilder('div');
           lineNumberContainer.addCssClass('mdkekcode-linenumbers');
           codeElem.addCssClass('mdkekcode-linenumbers');
 
           // Make more space if the line numbers have three digits (or two and a minus sign)
-          const offset= this.options.lineNumberOffset+ (this.markdownOptions.offset || 0)+ 1;
+          const offset= this.extensionConfig.lineNumberOffset+ (this.markdownOptions.offset || 0)+ 1;
           if( lineElements.length+ offset >= 100 || lineElements.length+ offset <= -10 ) {
             lineNumberContainer.addCssClass('mdkekcode-manylines');
             codeElem.addCssClass('mdkekcode-manylines');
@@ -425,7 +425,7 @@ function injectClassesImpl() {
         Kek.assert( codeElem instanceof Kek.HtmlElementBuilder, 'Could not query <code> element in virtual dom' );
 
         this._renderContent( preElem, codeElem );
-        this.options.codeElementCSSClasses.forEach( c => codeElem.addCssClass(c) );
+        this.extensionConfig.codeElementCSSClasses.forEach( c => codeElem.addCssClass(c) );
 
         return elem;
       }
@@ -458,7 +458,7 @@ export class CodeHighlightExtension extends Kek.Extension {
 
   preRender( kek ) {
     kek.document.forEachOfType(HighlightedCodeBlock, token => {
-      token.setOptions( kek.config() );
+      token.setExtensionConfig( kek.config() );
       token.highlightCode( kek );
     });
   }
