@@ -382,17 +382,15 @@ class TokenIterator extends ArrayIterator {
         continue;
       }
 
-      // Advance the iterator if the token is consumed
+      // Stop if the token is consumed
       if( fn( token ) ) {
-        this.next( i );
+        return;
       }
 
       // Allow multiple meta blocks to be checked
-      if( token.is(TokenType.CustomMetaBlock) ) {
-        continue;
+      if( !token.is(TokenType.CustomMetaBlock) ) {
+        return;
       }
-
-      return;
     }
   }
 }
