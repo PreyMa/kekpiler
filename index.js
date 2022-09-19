@@ -6,6 +6,7 @@ import {HeaderSluggerExtension} from './extensions/headerSlugger.js';
 import {CodeHighlightExtension} from './extensions/codeHighlighting.js';
 import {LineBreakExtension} from './extensions/lineBreak.js';
 import {TemmlMathExtension} from './extensions/temmlMath.js';
+import {OptionsExtension} from './extensions/options.js';
 import {FigureExtension} from './extensions/figure.js';
 
 async function getCompiler(options= {}) {
@@ -18,6 +19,7 @@ async function getCompiler(options= {}) {
   k.use( new TableOfContentsExtension() );
   k.use( new HeaderSluggerExtension() );
   k.use( new LineBreakExtension() );
+  k.use( new OptionsExtension() );
   k.use( new FigureExtension() );
   k.use( new CodeHighlightExtension() );
 
