@@ -1,13 +1,17 @@
-import * as Kek from '../kekpiler.js';
+import {
+  CompoundRegularExpression, OpaqueHtmlBuilder, HtmlBuilder, HtmlBuilderNodeList,
+  Token, assert, KekpilerImpl, HtmlElementBuilder, HtmlTextBuilder, Extension,
+  MessageSeverity
+} from '../kekpiler.js';
 
 const defaultTabSpaceCount= 2;
 const splitLinesRegex= /\r?\n/gm;
 const trailingWhitespaceRegex= /(?<=\S|^)[^\S\n\r]+(?=\n)/gm;
-const markdownOptionsRegex= new Kek.CompoundRegularExpression(
+const markdownOptionsRegex= new CompoundRegularExpression(
   /(?<attr>\w\S+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w\S+)))?|/gm,
   /(?<err>\S+)/
 );
-const lineMarkerRegex= new Kek.CompoundRegularExpression(
+const lineMarkerRegex= new CompoundRegularExpression(
   /((?<start>\d+)(\s*-\s*(?<end>\d+))?)|(?<err>\S+)/gm
 );
 
@@ -20,7 +24,7 @@ function charIsWhitespace( c ) {
 * If no line numbers or line markers are set the highlighted code consisting of
 * spans and text are stored as an opaque block of html code.
 **/
-class HtmlHighlightedCodeBlockBuilder extends Kek.OpaqueHtmlBuilder {
+class HtmlHighlightedCodeBlockBuilder extends OpaqueHtmlBuilder {
   constructor( html ) {
     super(html, 'highlighted-code-block', true)
   }
@@ -43,7 +47,7 @@ class HtmlHighlightedCodeBlockBuilder extends Kek.OpaqueHtmlBuilder {
 * Html Highlighted Code Line Content Builder class
 * A single line of highlighted code as opaque html.
 **/
-class HtmlHighlightedCodeLineContentBuilder extends Kek.OpaqueHtmlBuilder {
+class HtmlHighlightedCodeLineContentBuilder extends OpaqueHtmlBuilder {
   constructor( html ) {
     super(html, 'highlighted-code-line', true)
   }
@@ -57,7 +61,7 @@ class HtmlHighlightedCodeLineContentBuilder extends Kek.OpaqueHtmlBuilder {
 * nodes to the highlighted code and automatically adds the new line character at the
 * end when stringifying.
 **/
-class HtmlHighlightedCodeLineBuilder extends Kek.HtmlBuilderNodeList( Kek.HtmlBuilder ) {
+class HtmlHighlightedCodeLineBuilder extends HtmlBuilderNodeList( HtmlBuilder ) {
   constructor( ...children ) {
     super();
     this.children= children;
@@ -79,8 +83,8 @@ class HtmlHighlightedCodeLineBuilder extends Kek.HtmlBuilderNodeList( Kek.HtmlBu
 let HighlightedCodeBlock;
 
 function injectClassesImpl() {
-  HighlightedCodeBlock= Kek.Token.Token.injectClass(
-    class HighlightedCodeBlock extends Kek.Token.Code.extend() {
+  HighlightedCodeBlock= Token.Token.injectClass(
+    class HighlightedCodeBlock extends Token.Code.extend() {
       constructor(...args) {
         super(...args);
 
@@ -106,13 +110,13 @@ function injectClassesImpl() {
         while((match= regex.exec( this.lang )) !== null) {
           const groups= match.groups;
           if( groups.err ) {
-            const kek= Kek.KekpilerImpl.the();
+            const kek= KekpilerImpl.the();
             kek.addMessage(kek.config().badMarkdownOptionsMessageLevel, this, `Unexpected characers '${groups.err}' in code block options`);
             continue;
           }
 
           const attributeName= groups.attr;
-          Kek.assert( attributeName, 'Expected to match an attribute name for markdown options' );
+          assert( attributeName, 'Expected to match an attribute name for markdown options' );
           if( groups.val1 ) {
             this._setMarkdownOption(attributeName, groups.val1);
 
@@ -140,7 +144,7 @@ function injectClassesImpl() {
 
       _setMarkdownOption( name, value ) {
         if( this.markdownOptions.hasOwnProperty(name) ) {
-          Kek.KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
+          KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
           return;
         }
 
@@ -159,7 +163,7 @@ function injectClassesImpl() {
         while((match= regex.exec(markerText)) !== null) {
           const groups= match.groups;
           if( groups.err ) {
-            Kek.KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
+            KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
             continue;
           }
 
@@ -289,7 +293,7 @@ function injectClassesImpl() {
       }
 
       highlightCode( kek ) {
-        Kek.assert( this.extensionConfig, 'Missing highlighting options');
+        assert( this.extensionConfig, 'Missing highlighting options');
 
         this._trimWhitespaceIfEnabled();
         this._normalizeTabsAndSpacesIfEnabled();
@@ -308,7 +312,7 @@ function injectClassesImpl() {
 
         // Add language name tag to the code block
         if( this.extensionConfig.showHighlightedLanguage ) {
-          const langElem= new Kek.HtmlElementBuilder('div', new Kek.HtmlTextBuilder(this.lang) );
+          const langElem= new HtmlElementBuilder('div', new HtmlTextBuilder(this.lang) );
           langElem.addCssClass('mdkekcode-langname');
           preElem.appendChild( langElem );
         }
@@ -325,7 +329,7 @@ function injectClassesImpl() {
         // Add line numbers after the <code> element
         let lineNumberContainer= null;
         if( this.extensionConfig.showLineNumbers ) {
-          lineNumberContainer= new Kek.HtmlElementBuilder('div');
+          lineNumberContainer= new HtmlElementBuilder('div');
           lineNumberContainer.addCssClass('mdkekcode-linenumbers');
           codeElem.addCssClass('mdkekcode-linenumbers');
 
@@ -338,10 +342,10 @@ function injectClassesImpl() {
 
           for( let i= 0; i!== lineElements.length; i++ ) {
             const lineNum= i+ offset;
-            const lineTag= new Kek.HtmlElementBuilder('span',
-              new Kek.HtmlElementBuilder('span',
+            const lineTag= new HtmlElementBuilder('span',
+              new HtmlElementBuilder('span',
                 new HtmlHighlightedCodeLineBuilder(
-                  new Kek.HtmlTextBuilder(''+ lineNum)
+                  new HtmlTextBuilder(''+ lineNum)
                 )
               )
             );
@@ -398,7 +402,7 @@ function injectClassesImpl() {
               cssClassName= 'mdkekcode-marked';
             }
 
-            const wrappedLine= new Kek.HtmlElementBuilder('span', line);
+            const wrappedLine= new HtmlElementBuilder('span', line);
             wrappedLine.addCssClass( cssClassName );
             lineElements[lineIdx]= wrappedLine;
 
@@ -419,10 +423,10 @@ function injectClassesImpl() {
         this.text= text;
 
         const preElem= elem.descendantWithTagname('pre');
-        Kek.assert( preElem instanceof Kek.HtmlElementBuilder, 'Could not query <pre> element in virtual dom' );
+        assert( preElem instanceof HtmlElementBuilder, 'Could not query <pre> element in virtual dom' );
 
         const codeElem= preElem.descendantWithTagname('code');
-        Kek.assert( codeElem instanceof Kek.HtmlElementBuilder, 'Could not query <code> element in virtual dom' );
+        assert( codeElem instanceof HtmlElementBuilder, 'Could not query <code> element in virtual dom' );
 
         this._renderContent( preElem, codeElem );
         this.extensionConfig.codeElementCSSClasses.forEach( c => codeElem.addCssClass(c) );
@@ -433,7 +437,7 @@ function injectClassesImpl() {
   );
 }
 
-export class CodeHighlightExtension extends Kek.Extension {
+export class CodeHighlightExtension extends Extension {
   init( kek ) {
     kek.setConfigDefaults({
       trimWhitespace: true,
@@ -446,8 +450,8 @@ export class CodeHighlightExtension extends Kek.Extension {
       lineNumberOffset: 0,
       showHighlightedLanguage: true,
       codeElementCSSClasses: ['mdkekcode'],
-      highlightingFailureMessageLevel: Kek.MessageSeverity.Warning,
-      badMarkdownOptionsMessageLevel: Kek.MessageSeverity.Warning
+      highlightingFailureMessageLevel: MessageSeverity.Warning,
+      badMarkdownOptionsMessageLevel: MessageSeverity.Warning
     });
     return 'CodeHighlight';
   }
