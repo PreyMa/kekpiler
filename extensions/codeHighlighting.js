@@ -4,13 +4,11 @@ import {
   MessageSeverity
 } from '../kekpiler.js';
 
+import { Options, ConfigurableToken } from './options.js';
+
 const defaultTabSpaceCount= 2;
 const splitLinesRegex= /\r?\n/gm;
 const trailingWhitespaceRegex= /(?<=\S|^)[^\S\n\r]+(?=\n)/gm;
-const markdownOptionsRegex= new CompoundRegularExpression(
-  /(?<attr>\w\S+)[^\S\n\r]*(=[^\S\n\r]*(("(?<val1>((?!(?<!\\)").)*)")|(?<val2>\w\S+)))?|/gm,
-  /(?<err>\S+)/
-);
 const lineMarkerRegex= new CompoundRegularExpression(
   /((?<start>\d+)(\s*-\s*(?<end>\d+))?)|(?<err>\S+)/gm
 );
@@ -88,7 +86,7 @@ function injectClassesImpl() {
       constructor(...args) {
         super(...args);
 
-        this.markdownOptions= {};
+        this.markdownOptions= null;
         this.highlightedHtml= null;
         this.extensionConfig= null;
 
@@ -104,34 +102,18 @@ function injectClassesImpl() {
           return;
         }
 
-        const regex= markdownOptionsRegex.copy();
+        const kek= KekpilerImpl.the();
+        const logger= kek.severityLogger( kek.config().badOptionsMessageLevel, this );
 
-        let match, language= null;
-        while((match= regex.exec( this.lang )) !== null) {
-          const groups= match.groups;
-          if( groups.err ) {
-            const kek= KekpilerImpl.the();
-            kek.addMessage(kek.config().badMarkdownOptionsMessageLevel, this, `Unexpected characers '${groups.err}' in code block options`);
-            continue;
+        let language= null;
+        this.markdownOptions= new Options();
+        this.markdownOptions.parseOptions( this.lang, logger, (name, value) => {
+          if( value === true && language === null ) {
+            language= name;
+            return undefined;
           }
-
-          const attributeName= groups.attr;
-          assert( attributeName, 'Expected to match an attribute name for markdown options' );
-          if( groups.val1 ) {
-            this._setMarkdownOption(attributeName, groups.val1);
-
-          } else if( groups.val2 ) {
-            this._setMarkdownOption(attributeName, groups.val2);
-
-          } else {
-            if( language === null ) {
-              language= attributeName;
-              continue;
-            }
-
-            this._setMarkdownOption(attributeName, true);
-          }
-        }
+          return value;
+        });
 
         this.lang= language ? language.toLowerCase() : language;
 
@@ -140,15 +122,6 @@ function injectClassesImpl() {
         }
 
         this._parseLineMarkers();
-      }
-
-      _setMarkdownOption( name, value ) {
-        if( this.markdownOptions.hasOwnProperty(name) ) {
-          KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Multiple values for the attribute '${name}' in code block options`);
-          return;
-        }
-
-        this.markdownOptions[name]= typeof value === 'string' ? value.replaceAll('\\"', '"') : value;
       }
 
       _parseLineMarkers() {
@@ -163,7 +136,8 @@ function injectClassesImpl() {
         while((match= regex.exec(markerText)) !== null) {
           const groups= match.groups;
           if( groups.err ) {
-            KekpilerImpl.the().addMessage(this.extensionConfig.badMarkdownOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
+            const kek= KekpilerImpl.the();
+            kek.addMessage(kek.config().badOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
             continue;
           }
 
@@ -450,8 +424,7 @@ export class CodeHighlightExtension extends Extension {
       lineNumberOffset: 0,
       showHighlightedLanguage: true,
       codeElementCSSClasses: ['mdkekcode'],
-      highlightingFailureMessageLevel: MessageSeverity.Warning,
-      badMarkdownOptionsMessageLevel: MessageSeverity.Warning
+      highlightingFailureMessageLevel: MessageSeverity.Warning
     });
     return 'CodeHighlight';
   }
