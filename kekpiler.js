@@ -573,6 +573,25 @@ class CompilationError extends PositionalMessage {
 }
 
 /**
+* Severtiy Logger class
+* A message logger configuration that stores the kekpiler instance, severity and
+* token that can be passed around. Allows eg extensions to set their message severity
+* on a logger and hand it off to other machinery that does not know about the kekpiler
+* instance or the user configuration.
+**/
+class SeverityLogger {
+  constructor( kek, severity, token ) {
+    this.kekpiler= kek;
+    this.severity= severity;
+    this.token= token;
+  }
+
+  addMessage( message ) {
+    this.kekpiler.addMessage( this.severity, this.token, message );
+  }
+}
+
+/**
 * Html Builder class
 * Simple virtual DOM base class for html elements that can be converted into HTML
 * markup code.
@@ -2495,6 +2514,10 @@ class Kekpiler {
     this.addMessage( MessageSeverity.Error, token, text );
   }
 
+  severityLogger( severity, token ) {
+    return new SeverityLogger( this, severity, token );
+  }
+
   _injectExtensionClassesCalls() {
     if( Kekpiler._didInjectClasses ) {
       return;
@@ -2678,6 +2701,7 @@ export {
   OpaqueHtmlBuilder,
   PositionalMessage,
   Printer,
+  SeverityLogger,
   Tokenizer,
   Kekpiler as KekpilerImpl,
   KekpilerProxy as Kekpiler,
