@@ -82,7 +82,7 @@ let HighlightedCodeBlock;
 
 function injectClassesImpl() {
   HighlightedCodeBlock= Token.Token.injectClass(
-    class HighlightedCodeBlock extends Token.Code.extend() {
+    class HighlightedCodeBlock extends ConfigurableToken( Token.Code.extend() ) {
       constructor(...args) {
         super(...args);
 
@@ -95,6 +95,11 @@ function injectClassesImpl() {
 
       setExtensionConfig( opt ) {
         this.extensionConfig= opt;
+      }
+
+      setOptions( options ) {
+        this.markdownOptions.assign( options );
+        this._processMarkdownOptions();
       }
 
       _parseMarkdownOptions() {
@@ -117,6 +122,10 @@ function injectClassesImpl() {
 
         this.lang= language ? language.toLowerCase() : language;
 
+        this._processMarkdownOptions();
+      }
+
+      _processMarkdownOptions() {
         if( this.markdownOptions.offset ) {
           this.markdownOptions.offset= parseInt(this.markdownOptions.offset) || 0;
         }
