@@ -1,6 +1,6 @@
 import * as Kek from '../kekpiler.js';
 
-const defaultTabSapceCount= 2;
+const defaultTabSpaceCount= 2;
 const splitLinesRegex= /\r?\n/gm;
 const trailingWhitespaceRegex= /(?<=\S|^)[^\S\n\r]+(?=\n)/gm;
 const markdownOptionsRegex= new Kek.CompoundRegularExpression(
@@ -212,12 +212,12 @@ function injectClassesImpl() {
 
         // Convert tab characters into spaces
         if( typeof doSpaces !== 'undefined' ) {
-          const spaceCount= typeof doSpaces === 'number' ? doSpaces : defaultTabSapceCount;
+          const spaceCount= typeof doSpaces === 'number' ? doSpaces : defaultTabSpaceCount;
           this.text= this.text.replaceAll('\t', ' '.repeat(spaceCount) );
 
         // Convert consecutive space characters into tabs
         } else if( typeof doTabs !== 'undefined' ) {
-          const spaceCount= typeof doTabs === 'number' ? doTabs : defaultTabSapceCount;
+          const spaceCount= typeof doTabs === 'number' ? doTabs : defaultTabSpaceCount;
           const spaceRepetitionRegex= new RegExp(` {${spaceCount}}`, 'gm');
           this.text= this.text.replaceAll(spaceRepetitionRegex, '\t');
         }
@@ -437,7 +437,7 @@ export class CodeHighlightExtension extends Kek.Extension {
   init( kek ) {
     kek.setConfigDefaults({
       trimWhitespace: true,
-      normalizeTabsToSpaces: defaultTabSapceCount,
+      normalizeTabsToSpaces: defaultTabSpaceCount,
       normalizeSpacesToTabs: undefined,
       removeIndent: true,
       highlightingFunction: (txt, lang) => txt,
