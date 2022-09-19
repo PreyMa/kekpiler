@@ -74,11 +74,66 @@ export class Options {
   }
 }
 
+export const ConfigurableToken= Mixin( klass => {
+  return class ConfigurableToken extends klass {
+    setOptions() {
+      abstractMethod();
+    }
+
+    consumeNeighbours( it ) {
+      const res= super.consumeNeighbours( it );
+      if( res !== this ) {
+        return res;
+      }
+
+      it.consumeFirstNonDivisionTokenIf( token => {
+        if( token.is(Token.TokenType.CustomMetaBlock) && token instanceof OptionsToken ) {
+          this.setOptions( token.getOptions() );
+          return true;
+        }
+      });
+
+      return this;
+    }
+  }
+});
+
+class OptionsToken extends Token.CustomMetaBlock.extend() {
+  constructor(...args) {
+    super(...args);
+    this.wasConsumed= false;
+
+    const kek= KekpilerImpl.the();
+    const logger= kek.severityLogger( kek.config().badOptionsMessageLevel, this );
+
+    this.options= new Options();
+    this.options.parseOptions( this.referenceName(), logger );
+  }
+
+  getOptions() {
+    this.wasConsumed= true;
+    return this.options;
+  }
+}
+
 export class OptionsExtension extends Extension {
   init( kek ) {
     kek.setConfigDefaults({
-      badOptionsMessageLevel: MessageSeverity.Warning
+      badOptionsMessageLevel: MessageSeverity.Warning,
+      unusedOptionsBlockMessageLevel: MessageSeverity.Warning
     });
+    kek.registerCustomBlockToken('options', OptionsToken);
     return 'Options';
+  }
+
+  preRender( kek ) {
+    kek._setInstance(() => {
+      kek.document.forEachOfType(OptionsToken, token => {
+        console.log( token );
+        if( !token.wasConsumed ) {
+          kek.addMessage(kek.config().unusedOptionsBlockMessageLevel, token, `Options block does not correspond to anything`);
+        }
+      });
+    });
   }
 }
