@@ -12,6 +12,11 @@ const FigureMixin= Kek.Mixin(klass => class FigureMixin extends klass {
   }
 
   consumeNeighbours( it ) {
+    const res= super.consumeNeighbours( it );
+    if( res !== this ) {
+      return res;
+    }
+
     it.consumeFirstNonDivisionTokenIf( token => {
       if( token.is(Kek.Token.TokenType.CustomMetaBlock) && token instanceof Caption ) {
         this.captionTextContent= token.resourceName() || token.referenceName();
