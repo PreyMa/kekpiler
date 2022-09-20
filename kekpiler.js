@@ -1295,6 +1295,8 @@ class Token {
   render() {
     abstractMethod();
   }
+
+  printTextContent( p ) {}
 }
 
 /**
@@ -1361,6 +1363,10 @@ class ParentToken extends Token {
     const elem= new HtmlElementBuilder(this._htmlElementTag());
     this._renderChildren( elem );
     return elem;
+  }
+
+  printTextContent( p ) {
+    this.children.forEach( c => c.printTextContent( p ) );
   }
 
   _createChildrenFromTokenList( tokens ) {
@@ -1675,6 +1681,10 @@ class TextToken extends Token {
   render( p ) {
     return new HtmlTextBuilder( this.text );
   }
+
+  printTextContent( p ) {
+    p.print( this.text );
+  }
 }
 TextToken._tokenType= TokenType.Text;
 
@@ -1739,6 +1749,12 @@ class Code extends TextToken {
                 new HtmlTextBuilder( this.text )
               )
             )).decorate( HtmlBuilderPreWhitespace );
+  }
+
+  printTextContent( p ) {
+    if( Kekpiler.the().config().dumpCodeblocksAsTextContent ) {
+      super.printTextContent( p );
+    }
   }
 }
 Code._tokenType= TokenType.Code;
@@ -2245,7 +2261,8 @@ class Kekpiler {
       userContentPrefix: 'md_',
       headingLevelOffset: 0,
       imageWithoutAltTextMessageLevel: MessageSeverity.Warning,
-      debugPrinting: false
+      debugPrinting: false,
+      dumpCodeblocksAsTextContent: false
     });
 
     /** @type{Extension[]} **/
@@ -2337,6 +2354,13 @@ class Kekpiler {
   _dumpDomBuilder() {
     const printer= new IndentPrinter();
     this.domBuilder.print( printer );
+    return printer.string();
+  }
+
+  _dumpTextContent() {
+    assert( this.document, 'There is no compiled document to extract text from');
+    const printer= new Printer();
+    this.document.printTextContent( printer );
     return printer.string();
   }
 
@@ -2589,6 +2613,12 @@ class Kekpiler {
       return html;
     });
   }
+
+  extractTextContent() {
+    return this._setInstance(() => {
+      return this._dumpTextContent();
+    });
+  }
 }
 /** @type {Kekpiler} **/
 Kekpiler._instance= null;
@@ -2617,6 +2647,10 @@ class KekpilerProxy {
 
   compile(...args) {
     return this.kekpiler.compile(...args);
+  }
+
+  extractTextContent(...args) {
+    return this.kekpiler.extractTextContent(...args);
   }
 
   printMessages(...args) {
