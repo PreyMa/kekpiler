@@ -1,5 +1,5 @@
 import {
-  OpaqueHtmlBuilder, Token, Extension, assert
+  OpaqueHtmlBuilder, Token, Extension, assert, escapeHtml
 } from '../kekpiler.js';
 
 
@@ -24,8 +24,19 @@ class MathToken extends Token.Token {
     return true;
   }
 
-  temmlCompile( temml ) {
-    this.mathMlString= temml.renderToString( this.text );
+  temmlCompile( temml, config ) {
+    const str= this.mathMlString= temml.renderToString( this.text );
+
+    if( config.temmlMathAddMarkupSourceAttribute ) {
+      // Directly inject the attribute into the html string
+      const idx= str.indexOf('<math');
+      assert( idx >= 0, 'Expected <math> tag in temml output string');
+
+      const left= str.substring( 0, idx+ 5 );
+      const right= str.substring( idx+ 5 );
+      const safeSource= escapeHtml( this.text.trim() );
+      this.mathMlString= `${left} data-markup-source="${safeSource}" ${right}`;
+    }
   }
 
   render() {
@@ -42,6 +53,10 @@ export class TemmlMathExtension extends Extension {
   }
 
   init( kek ) {
+    kek.setConfigDefaults({
+      temmlMathAddMarkupSourceAttribute: true
+    });
+
     kek.tokenizer().defineTextToken('math', MathToken, mathRegex);
     return 'TemmlMath';
   }
@@ -49,7 +64,7 @@ export class TemmlMathExtension extends Extension {
   preRender( kek ) {
     // Compile all math tokens to MathML using Temml
     kek.document.forEachOfType(MathToken, tk => {
-      tk.temmlCompile(this.temml);
+      tk.temmlCompile( this.temml, kek.config() );
     });
   }
 }
