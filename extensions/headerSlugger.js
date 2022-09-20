@@ -1,4 +1,4 @@
-import * as Kek from '../kekpiler.js';
+import {Token, Extension} from '../kekpiler.js';
 import {FragmentToken} from './fragments.js';
 
 class SimpleSlugger {
@@ -26,8 +26,8 @@ class SimpleSlugger {
 
 let SluggedHeader;
 function injectClassesImpl() {
-  SluggedHeader= Kek.Token.Token.injectClass(
-    class SluggedHeader extends FragmentToken(Kek.Token.Header.extend()) {
+  SluggedHeader= Token.Token.injectClass(
+    class SluggedHeader extends FragmentToken(Token.Header.extend()) {
       constructor(...args) {
         super(...args);
 
@@ -49,7 +49,7 @@ function injectClassesImpl() {
   );
 }
 
-export class HeaderSluggerExtension extends Kek.Extension {
+export class HeaderSluggerExtension extends Extension {
   constructor() {
     super();
     this.slugger= null;

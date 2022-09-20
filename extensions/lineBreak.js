@@ -1,8 +1,10 @@
-import * as Kek from '../kekpiler.js';
+import {
+  Token, HtmlSingleElementBuilder, Extension
+} from '../kekpiler.js';
 
-class LineBreakToken extends Kek.Token.CustomBlock.extend() {
+class LineBreakToken extends Token.CustomBlock.extend() {
   render() {
-    return new Kek.HtmlSingleElementBuilder('br');
+    return new HtmlSingleElementBuilder('br');
   }
 
   isInlineToken() {
@@ -14,7 +16,7 @@ class LineBreakToken extends Kek.Token.CustomBlock.extend() {
   }
 }
 
-export class LineBreakExtension extends Kek.Extension {
+export class LineBreakExtension extends Extension {
   init( k ) {
     k.registerCustomBlockToken('break', LineBreakToken);
   }

@@ -1,20 +1,22 @@
-import * as Kek from '../kekpiler.js';
+import {
+  OpaqueHtmlBuilder, Token, Extension, assert
+} from '../kekpiler.js';
 
 
 const mathRegex= /(?<math>(?<!\\)\$([\s\S](?<![^\\]\$))+(?<!\\)\$)|/;
 
-class HtmlMathMlBuilder extends Kek.OpaqueHtmlBuilder {
+class HtmlMathMlBuilder extends OpaqueHtmlBuilder {
   constructor( mathml ) {
     super( mathml, 'math-ml' );
   }
 }
 
-class MathToken extends Kek.Token.Token {
+class MathToken extends Token.Token {
   constructor( pos, text ) {
     super( pos );
     this.mathMlString= null;
 
-    Kek.assert(text[0] === '$' && text[text.length-1] === '$', 'Expected math formular to start with $');
+    assert(text[0] === '$' && text[text.length-1] === '$', 'Expected math formular to start with $');
     this.text= text.substring(1, text.length-1);
   }
 
@@ -31,11 +33,11 @@ class MathToken extends Kek.Token.Token {
   }
 }
 
-export class TemmlMathExtension extends Kek.Extension {
+export class TemmlMathExtension extends Extension {
   constructor( temml ) {
     super();
 
-    Kek.assert(temml, 'Argument error: Missing Temml library');
+    assert(temml, 'Argument error: Missing Temml library');
     this.temml= temml;
   }
 

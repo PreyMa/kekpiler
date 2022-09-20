@@ -1,7 +1,9 @@
-import * as Kek from '../kekpiler.js';
+import {
+  Token, HtmlElementBuilder, HtmlTextBuilder, Extension, assert
+} from '../kekpiler.js';
 import {FragmentToken} from './fragments.js';
 
-class TableOfContents extends Kek.Token.CustomBlock.extend() {
+class TableOfContents extends Token.CustomBlock.extend() {
   constructor( text ) {
     super( text );
 
@@ -24,22 +26,22 @@ class TableOfContents extends Kek.Token.CustomBlock.extend() {
       }
 
       // Create header link as list element
-      const linkElem= new Kek.HtmlElementBuilder('a', new Kek.HtmlTextBuilder(tk.title()));
+      const linkElem= new HtmlElementBuilder('a', new HtmlTextBuilder(tk.title()));
       linkElem.setAttribute('href', `#${tk.fragmentId()}`);
 
-      return new Kek.HtmlElementBuilder('li', linkElem);
+      return new HtmlElementBuilder('li', linkElem);
     });
 
     // Create ordered list filled with children
-    return new Kek.HtmlElementBuilder('ol', ...children );
+    return new HtmlElementBuilder('ol', ...children );
   }
 
   render() {
-    return  new Kek.HtmlElementBuilder('p', this._renderLevel( this.table ));
+    return  new HtmlElementBuilder('p', this._renderLevel( this.table ));
   }
 }
 
-export class TableOfContentsExtension extends Kek.Extension {
+export class TableOfContentsExtension extends Extension {
   constructor() {
     super();
 
@@ -63,7 +65,7 @@ export class TableOfContentsExtension extends Kek.Extension {
       // Only add items with title
       if( tk.title() ) {
         // Header might change current level
-        if( tk instanceof Kek.Token.Header ) {
+        if( tk instanceof Token.Header ) {
           // Add new nested levels
           const level= tk.headerLevel();
           while( level > currentLevel ) {
@@ -78,7 +80,7 @@ export class TableOfContentsExtension extends Kek.Extension {
             currentArray= this.table;
             for( let i= 1; i< level; i++ ) {
               currentArray= currentArray[currentArray.length-1];
-              Kek.assert( Array.isArray(currentArray) );
+              assert( Array.isArray(currentArray) );
             }
 
             currentLevel= level;
