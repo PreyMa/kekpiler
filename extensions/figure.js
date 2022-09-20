@@ -22,7 +22,7 @@ const FigureMixin= Mixin(klass => class FigureMixin extends klass {
 
     it.consumeFirstNonDivisionTokenIf( token => {
       if( token.is(Token.TokenType.CustomMetaBlock) && token instanceof Caption ) {
-        this.captionTextContent= token.resourceName() || token.referenceName();
+        this.captionTextContent= token.captionText();
         return true;
       }
     });
@@ -52,6 +52,11 @@ const FigureMixin= Mixin(klass => class FigureMixin extends klass {
 
     return figureElement;
   }
+
+  printTextContent( p ) {
+    super.printTextContent( p );
+    p.print( this.captionText() );
+  }
 });
 
 class Caption extends Token.CustomMetaBlock.extend() {
@@ -59,10 +64,14 @@ class Caption extends Token.CustomMetaBlock.extend() {
     super(...args);
 
     // Expect token to have text content
-    if( !this.resourceName() && !this.referenceName() ) {
+    if( !this.captionText() ) {
       const kek= KekpilerImpl.the();
       kek.addMessage(kek.config().emptyCaptionElementMessageLevel, this, 'Caption without any text content found');
     }
+  }
+
+  captionText() {
+    return this.resourceName() || this.referenceName();
   }
 }
 
