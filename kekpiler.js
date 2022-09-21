@@ -2231,8 +2231,9 @@ const DefaultStyle= {
 **/
 class Extension {
   // Called before each compilation
-  // Returns the name of the extension as string
-  init() {}
+  /** @return {string} Name of the extension
+      @param {Kekpiler} comp Kekpiler instance **/
+  init( comp ) {}
 
   // Called once after init for each instance of the module
   // Inject token classes into the inheritance hierarchy here
@@ -2240,16 +2241,22 @@ class Extension {
 
   // Called before any tokenization happens
   // Do any textual preprocessing here
+  /** @param {Kekpiler} comp Kekpiler instance
+      @param {string} markdown Mardown source code
+      @returns {Promise<string>} Preprocessed markdown source code **/
   async preTokenize( comp, markdown ) {}
 
   // Called after token tree completed, and before rendering to html
   // Might not be called if no resource requests are pending
+  /** @param {Kekpiler} comp Kekpiler instance **/
   async locateResources( comp ) {}
 
   // Called before rendering to a virtual DOM
+  /** @param {Kekpiler} comp Kekpiler instance **/
   async preRender( comp ) {}
 
   // Called before the rendered DOM is stringified into html code
+  /** @param {Kekpiler} comp Kekpiler instance **/
   async preStringify( comp ) {}
 }
 
