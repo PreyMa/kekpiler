@@ -129,7 +129,6 @@ export class OptionsExtension extends Extension {
   preRender( kek ) {
     kek._setInstance(() => {
       kek.document.forEachOfType(OptionsToken, token => {
-        console.log( token );
         if( !token.wasConsumed ) {
           kek.addMessage(kek.config().unusedOptionsBlockMessageLevel, token, `Options block does not correspond to anything`);
         }
