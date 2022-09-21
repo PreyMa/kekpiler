@@ -77,6 +77,7 @@ class CompoundRegularExpression {
   }
 }
 
+const taskItemRegex= /((?<checkbox>^[^\S\r\n]*\[[^\S\r\n]*(?<checked>[xX])?[^\S\r\n]*\])|(?<content1>[\s\S]+))(?<content2>[\s\S]+)?/gm;
 const itemPrefixRegex= /[^\S\r\n]*([\*\+-]|(\d+\.))/gm;
 const quotePrefixRegex= /^[^\S\r\n]*>/gm;
 
@@ -642,7 +643,7 @@ class HtmlSingleElementBuilder extends HtmlBuilder {
     this.cssClasses.add( name );
   }
 
-  setAttribute( name, value, escapeAttr= true  ) {
+  setAttribute( name, value= '', escapeAttr= true  ) {
     if( !this.attributes ) {
       this.attributes= new Map();
     }
@@ -1559,11 +1560,17 @@ class ListItemToken extends ParentToken {
       wsLength++;
     }
 
+    // Remove leading whitespace from every line
     const wsRegex= (new RegExp(`\\r?\\n[^\\S\\r\\n]{0,${wsLength+2}}`, 'gm'));
+    let prefixLength= (new RegExp(itemPrefixRegex)).exec( text )[0].length;
+    let content= text.substring( prefixLength ).replace( wsRegex, '\n' );
 
-    // Tokenize
-    const prefixLength= (new RegExp(itemPrefixRegex)).exec( text )[0].length;
-    const content= text.substring( prefixLength ).replace( wsRegex, '\n' );
+    // Detect and remove task list marker
+    const taskGroups= (new RegExp(taskItemRegex)).exec( content ).groups;
+    content= taskGroups.content1 || taskGroups.content2 || '';
+    prefixLength += (taskGroups.checkbox || '').length;
+    this.isTaskItem= !!taskGroups.checkbox;
+    this.isChecked= !!taskGroups.checked;
 
     // FIXME: This is a hack to average out the index error created by removing
     // the whitespace before each line.
@@ -1615,6 +1622,23 @@ class ListItemToken extends ParentToken {
   _renderChildren( element ) {
     if( !this.children.length ) {
       return;
+    }
+
+    // Prepend checkbox element and set task item class
+    if( this.isTaskItem ) {
+      const checkbox= new HtmlSingleElementBuilder('input');
+      checkbox.setAttribute('type', 'checkbox');
+      checkbox.setAttribute('disabled');
+      if( this.isChecked ) {
+        checkbox.setAttribute('checked');
+      }
+
+      element.appendChild( checkbox );
+
+      const cssClass= Kekpiler.the().config().taskItemCssClassName;
+      if( cssClass ) {
+        element.addCssClass( cssClass );
+      }
     }
 
     // Print the contents of the first paragraph directly into the own body
@@ -2269,7 +2293,8 @@ class Kekpiler {
       headingLevelOffset: 0,
       imageWithoutAltTextMessageLevel: MessageSeverity.Warning,
       debugPrinting: false,
-      dumpCodeblocksAsTextContent: false
+      dumpCodeblocksAsTextContent: false,
+      taskItemCssClassName: 'task-item'
     });
 
     /** @type{Extension[]} **/
