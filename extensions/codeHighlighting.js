@@ -140,14 +140,12 @@ function injectClassesImpl() {
         }
 
         const markers= [];
-        const regex= lineMarkerRegex.copy();
-        let match;
-        while((match= regex.exec(markerText)) !== null) {
+        lineMarkerRegex.forEachMatch( markerText, match => {
           const groups= match.groups;
           if( groups.err ) {
             const kek= KekpilerImpl.the();
             kek.addMessage(kek.config().badOptionsMessageLevel, this, `Inavlid line marker number '${groups.err}' in code block options`);
-            continue;
+            return;
           }
 
           const start= parseInt( groups.start );
@@ -156,7 +154,7 @@ function injectClassesImpl() {
           for( let i= start; i<= end; i++ ) {
             markers.push(i);
           }
-        }
+        });
 
         this.markdownOptions.marker= markers;
       }

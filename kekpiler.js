@@ -59,6 +59,16 @@ class CompoundRegularExpression {
     return this.regex.exec( text );
   }
 
+  forEachMatch( text, fn ) {
+    const stateRegex= this.copy();
+    let match;
+    while((match= stateRegex.exec(text)) !== null) {
+      if( fn( match ) === IterationDecision.Break ) {
+        return;
+      }
+    }
+  }
+
   append( regex ) {
     this.sections.push( regex );
     this.regex= null;
@@ -918,19 +928,14 @@ class Tokenizer {
 
   static _tokenize( text, regex, indexOffset ) {
     const tokens= [];
-
-    // Create new state
-    regex= regex.copy();
-
-    let match;
-    while((match= regex.exec(text)) !== null) {
+    regex.forEachMatch( text, match => {
       const token= Token.createFromMatch( match, indexOffset );
       if( !token ) {
-        continue;
+        return;
       }
 
       tokens.push( token );
-    };
+    });
 
     return tokens;
   }

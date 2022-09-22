@@ -29,14 +29,11 @@ export class Options {
   }
 
   parseOptions( string, logger, cb= null ) {
-    const regex= optionsRegex.copy();
-
-    let match;
-    while((match= regex.exec( string )) !== null) {
+    optionsRegex.forEachMatch( string, match => {
       const groups= match.groups;
       if( groups.err ) {
         logger.addMessage(`Unexpected characters '${groups.err}' in options`);
-        continue;
+        return;
       }
 
       const attributeName= groups.attr;
@@ -50,7 +47,7 @@ export class Options {
       } else {
         this._setOption(attributeName, true, logger, cb);
       }
-    }
+    });
   }
 
   _setOption( name, value, logger, cb ) {
