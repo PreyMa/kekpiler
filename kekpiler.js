@@ -956,20 +956,28 @@ class Tokenizer {
     return Tokenizer._tokenize( text, this.tableRegex, indexOffset );
   }
 
-  defineTextToken( name, klass, regex ) {
-
+  _defineToken( groupName, klass ) {
     const klassName= klass.name;
-    assert(inheritsFrom(Token, klass), `To define a text token, a class needs to inherit from the Token base class. The class '${klassName}' does not inherit from 'Token'.`);
-    assert(!TokenMatchGroups[name], `Token regex group name is already in use '${name}'`);
+    assert(inheritsFrom(Token, klass), `To define a token, a class needs to inherit from the Token base class. The class '${klassName}' does not inherit from 'Token'.`);
+    assert(!TokenMatchGroups[groupName], `Token regex group name is already in use '${groupName}'`);
     assert(!TokenType[klassName], `Token klass name is already in use '${klassName}'`);
 
-    // TODO: Make this more generic.. Maybe even handle block level tokens?
-    TokenMatchGroups[name]= klass;
-    this.containerBoxRegex.insert( -3, regex ); // Before <par>
-    this.paragraphRegex.insert( -2, regex );    // Before <text>
-
+    TokenMatchGroups[groupName]= klass;
     TokenType._addKey(klassName);
     klass._tokenType= TokenType[klassName];
+  }
+
+  defineTextToken( name, klass, regex ) {
+    this._defineToken( name, klass );
+
+    this.containerBoxRegex.insert( -3, regex ); // Before <par>
+    this.paragraphRegex.insert( -2, regex );    // Before <text>
+  }
+
+  defineDocumentToken( name, klass, regex ) {
+    this._defineToken( name, klass );
+
+    this.documentRegex.insert( -4, regex ); // Before <par>
   }
 }
 
