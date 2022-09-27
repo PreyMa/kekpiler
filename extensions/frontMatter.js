@@ -115,7 +115,7 @@ class FrontMatterBlock extends Token.Token {
 export class FrontMatterExtension extends Extension {
   constructor() {
     super();
-    this.yamlData= new Map();
+    this.yamlData= null;
   }
 
   init( kek ) {
@@ -129,6 +129,7 @@ export class FrontMatterExtension extends Extension {
   }
 
   preTokenize( kek ) {
+    this.yamlData= new Map();
     kek.config().frontMatterYaml= this.yamlData;
   }
 
