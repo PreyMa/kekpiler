@@ -112,6 +112,30 @@ class FrontMatterBlock extends Token.Token {
   render() { /* NOP */ }
 }
 
+export class YamlFields extends Map {
+  getOr( name, def= null ) {
+    return this.has( name ) ? this.get( name ) : def;
+  }
+
+  getStringOr( name, def= null ) {
+    if( !this.has( name ) ) {
+      return def;
+    }
+
+    const value= this.get( name );
+    return Array.isArray( value ) ? def : value;
+  }
+
+  getArrayOr( name, def= null ) {
+    if( !this.has( name ) ) {
+      return def;
+    }
+
+    const value= this.get( name );
+    return Array.isArray( value ) ? value : def;
+  }
+}
+
 export class FrontMatterExtension extends Extension {
   constructor() {
     super();
@@ -129,7 +153,7 @@ export class FrontMatterExtension extends Extension {
   }
 
   preTokenize( kek ) {
-    this.yamlData= new Map();
+    this.yamlData= new YamlFields();
     kek.config().frontMatterYaml= this.yamlData;
   }
 
