@@ -2285,8 +2285,9 @@ class Extension {
 
   // Called after token tree completed, and before rendering to html
   // Might not be called if no resource requests are pending
-  /** @param {Kekpiler} comp Kekpiler instance **/
-  async locateResources( comp ) {}
+  /** @param {Kekpiler} comp Kekpiler instance
+      @param {Map<string, Map<string, ResourceToken[]>>} resourceRequests Resources requested in the markdown **/
+  async locateResources( comp, resourceRequests ) {}
 
   // Called before rendering to a virtual DOM
   /** @param {Kekpiler} comp Kekpiler instance **/
@@ -2540,7 +2541,7 @@ class Kekpiler {
     }
 
     for( const ex of this.extensions ) {
-      await ex.locateResources( this.resourceRequests );
+      await ex.locateResources( this, this.resourceRequests );
     }
 
     // Just use the resource/reference names as urls if none is set yet
